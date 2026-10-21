@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import Header from "@/lib/components/Header";
 import "./globals.css";
 
 const melodrama = localFont({
@@ -29,7 +30,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${melodrama.variable} ${generalSans.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="grid grid-cols-12 min-h-full">
+      <Header />
+        <div className="col-start-1 col-span-full row-start-1 min-h-full">{children}</div>
+      </body>
     </html>
   );
 }
