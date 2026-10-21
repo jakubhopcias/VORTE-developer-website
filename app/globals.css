@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme static {
+  --color-primary-white: #e4e3c3;
+  --color-secondary-white: #98977f;
+  --color-black: #181914;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-primary: var(--font-melodrama);
+  --font-secondary: var(--font-general-sans);
+  --font-sans: var(--font-general-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    background-color: var(--color-black);
+    color: var(--color-primary-white);
+    font-synthesis: none;
+  }
+
+  body {
+    background-color: var(--color-black);
+    color: var(--color-primary-white);
+    font-weight: 400;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/*
+ * Fluid type from 23.4375rem (375px) to 90rem (1440px).
+ * Desktop targets: display 6rem, headline 4rem, title 3rem,
+ * subtitle 2rem, subheading 1.5rem.
+ * Headings use Melodrama. small and xs use General Sans.
+ * Weight stays at the document regular (400) so a component can
+ * add font-medium, font-bold, and the other Tailwind weights.
+ */
+
+@utility display {
+  font-family: var(--font-melodrama);
+  font-size: clamp(3rem, 1.944rem + 4.51vw, 6rem);
+  line-height: 0.9;
+  letter-spacing: 0;
+}
+
+@utility headline {
+  font-family: var(--font-melodrama);
+  font-size: clamp(2.25rem, 1.634rem + 2.63vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+@utility title {
+  font-family: var(--font-melodrama);
+  font-size: clamp(1.875rem, 1.479rem + 1.69vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+@utility subtitle {
+  font-family: var(--font-melodrama);
+  font-size: clamp(1.5rem, 1.324rem + 0.75vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+@utility subheading {
+  font-family: var(--font-melodrama);
+  font-size: clamp(1.25rem, 1.162rem + 0.38vw, 1.5rem);
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+@utility small {
+  font-family: var(--font-general-sans);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+@utility xs {
+  font-family: var(--font-general-sans);
+  font-size: 0.6875rem;
+  line-height: 1.1;
+  letter-spacing: 0;
 }
