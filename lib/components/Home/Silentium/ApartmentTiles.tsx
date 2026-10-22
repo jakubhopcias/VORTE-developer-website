@@ -1,40 +1,35 @@
-import Image from "next/image";
-
 const apartments = [
   {
-    name: "The obsidian",
-    image: "/obsidian/balcony.jpg",
+    name: "The Obsidian",
+    href: "/apartments/the-obsidian",
   },
   {
-    name: "Monolith garden",
-    image: "/monolith-garden/kitchen.jpg",
+    name: "Monolith Garden",
+    href: "/apartments/monolith-garden",
   },
   {
-    name: "The silent horizon",
-    image: "/silent-horizon/living-room.jpg",
+    name: "The Silent Horizon",
+    href: "/apartments/the-silent-horizon",
   },
 ];
 
 export default function ApartmentTiles() {
   return (
-    <ul className="flex min-h-0 flex-1 flex-col justify-between">
-      {apartments.map((apartment) => (
-        <li
-          key={apartment.name}
-          className="flex items-end justify-between gap-6"
-        >
-          <p className="small text-primary-white underline decoration-primary-white underline-offset-4">
-            {apartment.name}
-          </p>
-          <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-md border border-secondary-white">
-            <Image
-              src={apartment.image}
-              alt=""
-              fill
-              sizes="7rem"
-              className="object-cover"
-            />
-          </div>
+    <ul className="flex w-full shrink-0 flex-col gap-6">
+      {apartments.map((apartment, index) => (
+        <li key={apartment.name} className="w-full">
+          <a
+            href={apartment.href}
+            className="flex w-full items-baseline gap-8"
+          >
+            <span className="small shrink-0 text-secondary-white">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <span className="small text-primary-white">{apartment.name}</span>
+            <span className="small ml-auto shrink-0 text-secondary-white">
+              See apartment →
+            </span>
+          </a>
         </li>
       ))}
     </ul>
