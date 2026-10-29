@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Header from "@/lib/components/Header";
 import "./globals.css";
+import Footer from "@/lib/components/Home/Footer";
 
 const melodrama = localFont({
   src: "./fonts/Melodrama-Variable.woff2",
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="grid grid-cols-12 min-h-full">
       <Header />
         <div className="col-start-1 col-span-full row-start-1 min-h-full">{children}</div>
+        <Footer />
       </body>
     </html>
   );

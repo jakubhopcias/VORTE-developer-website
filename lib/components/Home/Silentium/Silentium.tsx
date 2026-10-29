@@ -3,7 +3,7 @@ import ApartmentTiles from "@/lib/components/Home/Silentium/ApartmentTiles";
 
 export default function Silentium() {
   return (
-    <div className="m-12 grid h-[85svh] min-h-0 grid-cols-12 overflow-hidden">
+    <div id="silentium" className="m-12 grid h-[85svh] min-h-0 grid-cols-12 overflow-hidden">
       <div className="col-span-6 flex h-full min-h-0 flex-col justify-center gap-16 p-8">
         <div className="flex shrink-0 flex-col">
           <p className="small font-primary tracking-[0.4em] text-secondary-white">
@@ -33,7 +33,7 @@ export default function Silentium() {
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-tr from-black from-10% via-black/50 to-transparent" />
-        <p className="subheading font-secondary relative max-w-md text-primary-white">
+        <p className="subheading font-secondary frelative max-w-md text-primary-white">
           A masterclass in acoustic isolation and architectural mass. Designed
           for absolute privacy.
         </p>
