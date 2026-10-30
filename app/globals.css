@@ -30,7 +30,8 @@
  * Fluid type from 23.4375rem (375px) to 90rem (1440px).
  * Desktop targets: display 6rem, headline 4rem, title 3rem,
  * subtitle 2rem, subheading 1.5rem.
- * Headings use Melodrama. small and xs use General Sans.
+ * Headings use Melodrama. eyebrow is the tracked section label.
+ * small and xs use General Sans.
  * Weight stays at the document regular (400) so a component can
  * add font-medium, font-bold, and the other Tailwind weights.
  */
@@ -68,6 +69,13 @@
   font-size: clamp(1.25rem, 1.162rem + 0.38vw, 1.5rem);
   line-height: 1.2;
   letter-spacing: 0;
+}
+
+@utility eyebrow {
+  font-family: var(--font-melodrama);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  letter-spacing: 0.55em;
 }
 
 @utility small {

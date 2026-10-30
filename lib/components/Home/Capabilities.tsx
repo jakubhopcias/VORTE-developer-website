@@ -14,7 +14,7 @@ const services: Service[] = [
   {
     name: "Designing invisible smart house",
     copy: "Advanced **smart-home engineering** and climate control seamlessly integrated beneath architectural surfaces.",
-    src: "/smart-home.webp",
+    src: "/smart-home.jpg",
   },
   {
     name: "Bespoke Architecture",
@@ -50,7 +50,7 @@ export default function Capabilities() {
   const current = services[active];
 
   return (
-    <section className="m-12 grid h-[85svh] min-h-0 grid-cols-12">
+    <section className="m-12 grid h-svh py-12 min-h-0 grid-cols-12">
       <div className="col-span-6 flex h-full min-h-0 flex-col justify-between p-8">
         <div>
           <h2 className="headline text-primary-white">Capabilities</h2>

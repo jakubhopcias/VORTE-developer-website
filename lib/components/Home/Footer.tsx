@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 type FieldKey = "fullName" | "email" | "phone" | "enquiry";
 
@@ -47,7 +48,7 @@ const steps: Step[] = [
     ],
   },
   {
-    label: "enquiry",
+    label: "Enquiry",
     fields: [
       {
         key: "enquiry",
@@ -129,17 +130,24 @@ export default function Footer() {
   }
 
   return (
-    <footer className="m-12 flex flex-col gap-24">
+    <footer className="m-12 flex flex-col col-span-12 gap-32">
       <div className="grid grid-cols-12 items-center">
+        <h2 className="headline col-span-5 self-start">
+          Your requirements are unique. Our approach is absolute.
+        </h2>
         <form
           noValidate
           onSubmit={onSubmit}
-          className="col-span-5 flex items-start gap-10"
+          className="col-span-3 col-start-9 flex items-start gap-10"
         >
           <ol aria-label="Enquiry steps" className="flex shrink-0 flex-col">
             {steps.map((item, index) => {
               const status =
-                index < reached ? "complete" : index === reached ? "current" : "upcoming";
+                index < reached
+                  ? "complete"
+                  : index === reached
+                    ? "current"
+                    : "upcoming";
               const lineComplete = index < reached;
 
               return (
@@ -200,10 +208,11 @@ export default function Footer() {
               <div className="flex flex-col gap-6">
                 {step.fields.map((field, index) => (
                   <label key={field.key} className="flex flex-col gap-2">
-                    <span className="small text-primary-white">{field.label}</span>
+                    <span className="small text-primary-white">
+                      {field.label}
+                    </span>
                     {field.type === "textarea" ? (
                       <textarea
-                        ref={index === 0 ? fieldRef : undefined}
                         name={field.key}
                         rows={5}
                         autoComplete={field.autoComplete}
@@ -214,13 +223,15 @@ export default function Footer() {
                             ...current,
                             [field.key]: event.target.value,
                           }));
-                          setErrors((current) => ({ ...current, [field.key]: "" }));
+                          setErrors((current) => ({
+                            ...current,
+                            [field.key]: "",
+                          }));
                         }}
                         className="small resize-none rounded-xl border border-primary-white/50 bg-transparent px-4 py-3 text-primary-white outline-none transition-colors focus:border-primary-white"
                       />
                     ) : (
                       <input
-                        ref={index === 0 ? fieldRef : undefined}
                         name={field.key}
                         type={field.type}
                         autoComplete={field.autoComplete}
@@ -231,26 +242,31 @@ export default function Footer() {
                             ...current,
                             [field.key]: event.target.value,
                           }));
-                          setErrors((current) => ({ ...current, [field.key]: "" }));
+                          setErrors((current) => ({
+                            ...current,
+                            [field.key]: "",
+                          }));
                         }}
                         className="small rounded-xl border border-primary-white/50 bg-transparent px-4 py-3 text-primary-white outline-none transition-colors focus:border-primary-white"
                       />
                     )}
                     {errors[field.key] ? (
-                      <span className="xs text-primary-white">{errors[field.key]}</span>
+                      <span className="xs text-primary-white">
+                        {errors[field.key]}
+                      </span>
                     ) : null}
                   </label>
                 ))}
                 <button
                   type="submit"
-                  className="small mt-2 self-center rounded-xl border border-primary-white/70 px-10 py-3 text-primary-white transition-colors hover:border-primary-white"
+                  className="small mt-2 max-w-fit rounded-xl border border-primary-white/70 px-10 py-3 text-primary-white transition-colors hover:border-primary-white"
                 >
                   {stepIndex < steps.length - 1 ? "Next" : "Send"}
                 </button>
               </div>
             )}
-            <div className="mt-14 flex flex-col items-center gap-2 text-center">
-              <p className="xs text-secondary-white">Direct contact</p>
+            <div className="mt-14 flex flex-col gap-2">
+              <p className="small text-secondary-white">Direct contact</p>
               <p className="small text-secondary-white">
                 Adam kowalski
                 <span className="mx-2 text-primary-white" aria-hidden>
@@ -263,11 +279,6 @@ export default function Footer() {
             </div>
           </div>
         </form>
-
-        <h2 className="headline col-span-5 col-start-7">
-          <span className="block text-secondary-white">Correspondence</span>
-          <span className="block text-primary-white">for the few.</span>
-        </h2>
       </div>
 
       <div className="grid grid-cols-12 items-center">
@@ -277,32 +288,39 @@ export default function Footer() {
           width={62}
           height={13}
           unoptimized
-          className="col-span-2 h-6 w-auto"
+          className="col-span-2 h-4 w-auto"
         />
-        <div className="col-span-2 col-start-4 flex min-w-0 flex-wrap items-baseline gap-x-3">
-          <p className="small whitespace-nowrap text-secondary-white">Warsaw, Poland</p>
+        <div className="col-span-2 col-start-4 flex min-w-0 gap-2 flex-col items-baseline gap-x-3">
           <p className="small whitespace-nowrap text-secondary-white">
-            NIP: 000 00 00 000
+            Zurich, Switzerland
+          </p>
+          <p className="small whitespace-nowrap text-secondary-white">
+          CHE-123.456.789
           </p>
         </div>
         <div className="col-span-2 col-start-8 flex min-w-0 flex-wrap items-baseline justify-end gap-x-6 text-right min-[1320px]:w-max min-[1320px]:flex-nowrap min-[1320px]:justify-self-end">
-          <p className="small whitespace-nowrap text-secondary-white">
-            VORTE 2026 © All rights reserved.
-          </p>
-          <p className="small whitespace-nowrap text-secondary-white">
-            Designed by Jakub Hopciaś
+          <p className="small whitespace-nowrap flex flex-col items-start gap-2 text-secondary-white">
+            <p>VORTE 2026 © All rights reserved.</p>
+            <p>Designed by <Link href="https://hopcias.pl" target="blank" className="underline">Jakub Hopciaś</Link></p>
           </p>
         </div>
         <nav
           aria-label="Footer"
-          className="col-span-2 col-start-11 flex justify-end"
+          className="col-span-2 col-start-11 flex-col gap-4 flex items-end"
         >
-          <a
+          <Link
             href="#silentium"
             className="small text-primary-white underline decoration-primary-white underline-offset-4"
           >
             Silentium Apartments
-          </a>
+          </Link>
+        
+          <Link
+            href="#silentium"
+            className="small text-primary-white underline decoration-primary-white underline-offset-4"
+          >
+            Privacy
+          </Link>
         </nav>
       </div>
     </footer>
