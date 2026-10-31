@@ -18,12 +18,12 @@ const references = [
 
 export default function Press() {
   return (
-    <section className="m-12 flex flex-col gap-8">
+    <section className="flex flex-col gap-8 px-section py-section-y md:p-section">
       {references.map((reference) => (
         <a
           key={reference.quote}
           href={reference.href}
-          className="relative flex h-[60svh] min-h-0 flex-col justify-between overflow-hidden rounded-xl p-12"
+          className="relative flex h-[60svh] min-h-0 flex-col justify-between overflow-hidden rounded-xl p-section"
         >
           <Image
             src={reference.image}
@@ -41,7 +41,7 @@ export default function Press() {
             unoptimized
             className="relative z-10 h-7 w-auto max-w-24 self-start object-contain object-left"
             />
-          <div className="relative flex items-end justify-between gap-8">
+          <div className="relative flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between md:gap-8">
             <p className="subtitle max-w-xl text-primary-white">
               “ {reference.quote} ”
             </p>

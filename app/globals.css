@@ -4,6 +4,20 @@
   --color-primary-white: #e4e3c3;
   --color-secondary-white: #98977f;
   --color-black: #181914;
+
+  /* Section inset — px-section / py-section-y / p-section / etc.
+   * Phone: 24px x, 64px y. Tablet+: 48px. */
+  --spacing-section: 1.5rem; /* 24px */
+  --spacing-section-y: 4rem; /* 64px */
+  --spacing-section-top: 4rem; /* 64px */
+}
+
+@media (width >= 48rem) {
+  :root {
+    --spacing-section: 3rem; /* 48px */
+    --spacing-section-y: 3rem; /* 48px */
+    --spacing-section-top: 3rem; /* 48px */
+  }
 }
 
 @theme inline {
@@ -76,13 +90,19 @@
   font-size: 0.8125rem;
   line-height: 1.2;
   letter-spacing: 0.55em;
+  color: var(--color-secondary-white);
 }
 
 @utility small {
   font-family: var(--font-general-sans);
-  font-size: 0.8125rem;
-  line-height: 1.2;
+  font-size: 0.9375rem;
+  line-height: 1.35;
   letter-spacing: 0;
+
+  @media (width >= 48rem) {
+    font-size: 0.8125rem;
+    line-height: 1.2;
+  }
 }
 
 @utility xs {
@@ -90,4 +110,71 @@
   font-size: 0.6875rem;
   line-height: 1.1;
   letter-spacing: 0;
+}
+
+/* —— Buttons —— */
+
+@utility btn-primary {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-general-sans);
+  font-size: 1rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+  border-radius: 0.75rem;
+  padding-inline: 1.25rem;
+  padding-block: 0.75rem;
+  background-color: var(--color-primary-white);
+  color: var(--color-black);
+  font-weight: 500;
+  transition: opacity 150ms;
+  text-wrap: nowrap;
+
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+@utility btn-outline {
+  text-wrap: nowrap;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-general-sans);
+  font-size: 0.875rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+  border-radius: 0.75rem;
+  padding-inline: 1.25rem;
+  padding-block: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--color-primary-white) 70%, transparent);
+  color: var(--color-primary-white);
+  transition: border-color 150ms;
+
+
+  &:hover {
+    border-color: var(--color-primary-white);
+  }
+}
+
+@utility btn-group {
+  display: flex;
+  width: fit-content;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--color-secondary-white) 50%, transparent);
+  border-radius: 0.75rem;
+
+  @media (width < 48rem) {
+    padding: 0;
+    border-width: 0;
+  }
 }

@@ -3,7 +3,7 @@ import Image from "next/image";
 export default function Usp() {
   return (
     <>
-      <section className="grid h-svh grid-cols-12 items-center px-12 py-24">
+      <section className="grid h-svh grid-cols-12 items-center px-section py-section">
         <div className="relative col-span-6 h-full min-h-0 overflow-hidden rounded-3xl">
           <Image
             src="/monolith-garden/Gemini_Generated_Image_azy184azy184azy1.jpg"
@@ -27,7 +27,7 @@ export default function Usp() {
         </div>
       </section>
 
-      <section className="flex h-svh flex-col px-12 py-24">
+      <section className="flex h-svh flex-col px-section py-section">
         <div className="grid grid-cols-12 items-end gap-y-8">
           <p className="eyebrow col-span-12 text-secondary-white">
             intelligence without interface
@@ -53,7 +53,7 @@ export default function Usp() {
         </div>
       </section>
 
-      <section className="grid h-svh grid-cols-12 gap-x-8 px-12 py-24">
+      <section className="grid h-svh grid-cols-12 gap-x-8 px-section py-section">
         <div className="col-span-6 flex min-h-0 flex-col">
           <p className="eyebrow text-secondary-white">no corridors</p>
           <h2 className="headline mt-8 text-primary-white">

@@ -82,17 +82,11 @@ function ApartmentSection({
           <dd className="small mt-2 text-primary-white">{apartment.access}</dd>
         </div>
       </dl>
-      <div className="flex w-fit items-center gap-2 rounded-full border border-secondary-white/50 p-2">
-        <button
-          type="button"
-          className="small rounded-full px-5 py-3 text-primary-white"
-        >
+      <div className="btn-group">
+        <button type="button" className="btn-outline">
           Download floorplan
         </button>
-        <button
-          type="button"
-          className="small rounded-full bg-primary-white px-5 py-3 font-medium text-black"
-        >
+        <button type="button" className="btn-primary">
           Request Private Consultation
         </button>
       </div>
@@ -100,7 +94,7 @@ function ApartmentSection({
   );
 
   return (
-    <section className="grid h-svh grid-cols-12 gap-x-8 px-12 py-12">
+    <section className="grid h-svh grid-cols-12 gap-x-8 px-section py-section">
       {imageOnLeft ? (
         <>
           {media}

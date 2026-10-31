@@ -1,24 +1,26 @@
+import Link from "next/link";
+
 const apartments = [
   {
     name: "The Obsidian",
-    href: "/apartments/the-obsidian",
+    href: "/silentium-apartments#the-obsidian",
   },
   {
     name: "Monolith Garden",
-    href: "/apartments/monolith-garden",
+    href: "/silentium-apartments#monolith-garden",
   },
   {
     name: "The Silent Horizon",
-    href: "/apartments/the-silent-horizon",
+    href: "/silentium-apartments#the-silent-horizon",
   },
 ];
 
 export default function ApartmentTiles() {
   return (
-    <ul className="flex w-full shrink-0 flex-col gap-6">
+    <ul className="flex w-full shrink-0 flex-col gap-8 md:gap-6">
       {apartments.map((apartment, index) => (
         <li key={apartment.name} className="w-full">
-          <a
+          <Link
             href={apartment.href}
             className="flex w-full items-baseline gap-8"
           >
@@ -26,10 +28,10 @@ export default function ApartmentTiles() {
               {String(index + 1).padStart(2, "0")}
             </span>
             <span className="small text-primary-white">{apartment.name}</span>
-            <span className="small ml-auto shrink-0 text-secondary-white">
+            <span className="xs ml-auto shrink-0 text-secondary-white">
               See apartment →
             </span>
-          </a>
+          </Link>
         </li>
       ))}
     </ul>

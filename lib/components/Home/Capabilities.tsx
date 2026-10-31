@@ -50,8 +50,8 @@ export default function Capabilities() {
   const current = services[active];
 
   return (
-    <section className="m-12 grid h-svh py-12 min-h-0 grid-cols-12">
-      <div className="col-span-6 flex h-full min-h-0 flex-col justify-between p-8">
+    <section className="grid grid-cols-1 gap-12 px-section py-section-y lg:h-svh lg:min-h-0 lg:grid-cols-12 lg:gap-12 lg:overflow-hidden lg:p-section">
+      <div className="flex flex-col justify-between gap-12 lg:col-span-6 lg:h-full lg:min-h-0 lg:py-section">
         <div>
           <h2 className="headline text-primary-white">Capabilities</h2>
           <p className="small mt-6 max-w-md text-secondary-white">
@@ -60,6 +60,7 @@ export default function Capabilities() {
             running of the house after the concrete is set.
           </p>
         </div>
+
         <ul className="flex flex-col gap-8">
           {services.map((service, index) => {
             const isActive = index === active;
@@ -92,17 +93,18 @@ export default function Capabilities() {
           })}
         </ul>
       </div>
-      <div className="relative col-span-6 flex h-full min-h-0 flex-col justify-end overflow-hidden rounded-xl p-12">
+
+      <div className="relative flex h-[42svh] min-h-0 flex-col justify-end overflow-hidden rounded-xl p-6 lg:p-section lg:col-span-6 lg:h-full lg:min-h-0">
         <Image
           key={current.src}
           src={current.src}
           alt={current.name}
           fill
-          sizes="50vw"
+          sizes="(max-width: 1024px) 100vw, 50vw"
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-tr from-black from-10% via-black/50 to-transparent" />
-        <p className="subheading font-secondary relative max-w-md">
+        <p className="lg:subheading font-secondary relative max-w-md">
           {emphasisedCopy(current.copy)}
         </p>
       </div>

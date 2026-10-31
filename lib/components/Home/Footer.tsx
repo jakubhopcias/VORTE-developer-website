@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-
 type FieldKey = "fullName" | "email" | "phone" | "enquiry";
 
 type Field = {
@@ -130,15 +129,15 @@ export default function Footer() {
   }
 
   return (
-    <footer className="m-12 flex flex-col col-span-12 gap-32">
-      <div className="grid grid-cols-12 items-center">
-        <h2 className="headline col-span-5 self-start">
+    <footer className="col-span-12 flex flex-col gap-16 px-section py-section-y md:gap-24 md:p-section lg:gap-32">
+      <div className="flex flex-col gap-12 lg:grid lg:grid-cols-12 lg:items-start">
+        <h2 className="headline lg:col-span-5 lg:self-start">
           Your requirements are unique. Our approach is absolute.
         </h2>
         <form
           noValidate
           onSubmit={onSubmit}
-          className="col-span-3 col-start-9 flex items-start gap-10"
+          className="flex flex-col gap-8 sm:flex-row sm:items-start sm:gap-10 lg:col-span-5 lg:col-start-8 xl:col-span-3 xl:col-start-9"
         >
           <ol aria-label="Enquiry steps" className="flex shrink-0 flex-col">
             {steps.map((item, index) => {
@@ -206,7 +205,7 @@ export default function Footer() {
               </p>
             ) : (
               <div className="flex flex-col gap-6">
-                {step.fields.map((field, index) => (
+                {step.fields.map((field) => (
                   <label key={field.key} className="flex flex-col gap-2">
                     <span className="small text-primary-white">
                       {field.label}
@@ -257,15 +256,12 @@ export default function Footer() {
                     ) : null}
                   </label>
                 ))}
-                <button
-                  type="submit"
-                  className="small mt-2 max-w-fit rounded-xl border border-primary-white/70 px-10 py-3 text-primary-white transition-colors hover:border-primary-white"
-                >
+                <button type="submit" className="btn-outline mt-2 px-10">
                   {stepIndex < steps.length - 1 ? "Next" : "Send"}
                 </button>
               </div>
             )}
-            <div className="mt-14 flex flex-col gap-2">
+            <div className="mt-10 flex flex-col gap-2 md:mt-14">
               <p className="small text-secondary-white">Direct contact</p>
               <p className="small text-secondary-white">
                 Adam kowalski
@@ -281,32 +277,36 @@ export default function Footer() {
         </form>
       </div>
 
-      <div className="grid grid-cols-12 items-center">
+      <div className="flex flex-col gap-8 sm:grid sm:grid-cols-2 md:grid-cols-12 md:items-start">
         <Image
           src="/logo.svg"
           alt="VORTE"
           width={62}
           height={13}
           unoptimized
-          className="col-span-2 h-4 w-auto"
+          className="h-4 w-fit md:col-span-2"
         />
-        <div className="col-span-2 col-start-4 flex min-w-0 gap-2 flex-col items-baseline gap-x-3">
-          <p className="small whitespace-nowrap text-secondary-white">
-            Zurich, Switzerland
-          </p>
-          <p className="small whitespace-nowrap text-secondary-white">
-          CHE-123.456.789
-          </p>
+        <div className="flex flex-col gap-2 md:col-span-2 md:col-start-4">
+          <p className="small text-secondary-white">Zurich, Switzerland</p>
+          <p className="small text-secondary-white">CHE-123.456.789</p>
         </div>
-        <div className="col-span-2 col-start-8 flex min-w-0 flex-wrap items-baseline justify-end gap-x-6 text-right min-[1320px]:w-max min-[1320px]:flex-nowrap min-[1320px]:justify-self-end">
-          <p className="small whitespace-nowrap flex flex-col items-start gap-2 text-secondary-white">
-            <p>VORTE 2026 © All rights reserved.</p>
-            <p>Designed by <Link href="https://hopcias.pl" target="blank" className="underline">Jakub Hopciaś</Link></p>
+        <div className="flex flex-col gap-2 text-secondary-white md:col-span-3 md:col-start-7 lg:col-span-2 lg:col-start-8">
+          <p className="small">VORTE 2026 © All rights reserved.</p>
+          <p className="small">
+            Designed by{" "}
+            <Link
+              href="https://hopcias.pl"
+              target="_blank"
+              rel="noreferrer"
+              className="underline"
+            >
+              Jakub Hopciaś
+            </Link>
           </p>
         </div>
         <nav
           aria-label="Footer"
-          className="col-span-2 col-start-11 flex-col gap-4 flex items-end"
+          className="flex flex-col items-start gap-4 sm:items-end md:col-span-2 md:col-start-11"
         >
           <Link
             href="#silentium"
@@ -314,7 +314,6 @@ export default function Footer() {
           >
             Silentium Apartments
           </Link>
-        
           <Link
             href="#silentium"
             className="small text-primary-white underline decoration-primary-white underline-offset-4"
