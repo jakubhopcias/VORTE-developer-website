@@ -130,16 +130,16 @@ export default function Footer() {
 
   return (
     <footer className="col-span-12 flex flex-col gap-16 px-section py-section-y md:gap-24 md:p-section lg:gap-32">
-      <div className="flex flex-col gap-12 lg:grid lg:grid-cols-12 lg:items-start">
+      <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:items-start">
         <h2 className="headline lg:col-span-5 lg:self-start">
           Your requirements are unique. Our approach is absolute.
         </h2>
         <form
           noValidate
           onSubmit={onSubmit}
-          className="flex flex-col gap-8 sm:flex-row sm:items-start sm:gap-10 lg:col-span-5 lg:col-start-8 xl:col-span-3 xl:col-start-9"
+          className="grid grid-cols-6 gap-x-4 lg:col-span-5 lg:col-start-8 xl:col-span-4 xl:col-start-8"
         >
-          <ol aria-label="Enquiry steps" className="flex shrink-0 flex-col">
+          <ol aria-label="Enquiry steps" className="col-span-2 flex flex-col">
             {steps.map((item, index) => {
               const status =
                 index < reached
@@ -198,7 +198,7 @@ export default function Footer() {
             })}
           </ol>
 
-          <div className="flex min-w-0 flex-1 flex-col">
+          <div className="col-span-4 flex min-w-0 flex-col">
             {sent ? (
               <p className="small max-w-xs text-primary-white">
                 Received. The correspondence stays between us.
@@ -256,7 +256,7 @@ export default function Footer() {
                     ) : null}
                   </label>
                 ))}
-                <button type="submit" className="btn-outline mt-2 px-10">
+                <button type="submit" className="btn btn-outline mt-2 px-10">
                   {stepIndex < steps.length - 1 ? "Next" : "Send"}
                 </button>
               </div>
@@ -306,7 +306,7 @@ export default function Footer() {
         </div>
         <nav
           aria-label="Footer"
-          className="flex flex-col items-start gap-4 sm:items-end md:col-span-2 md:col-start-11"
+          className="flex flex-col items-start gap-4  md:col-span-2 md:col-start-11"
         >
           <Link
             href="#silentium"

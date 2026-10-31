@@ -6,7 +6,7 @@ export default function Silentium() {
   return (
     <div
       id="silentium"
-      className="flex flex-col gap-12 px-section py-section-y lg:h-svh lg:min-h-0 lg:flex-row lg:items-stretch lg:gap-12 lg:overflow-hidden lg:p-section"
+      className="flex flex-col gap-8 px-section py-section-y lg:h-svh lg:min-h-0 lg:flex-row lg:items-stretch lg:gap-8 lg:overflow-hidden lg:p-section"
     >
       <div className="contents lg:flex lg:w-1/2 lg:min-h-0 lg:flex-col lg:justify-center lg:gap-16">
         <div className="order-1">

@@ -17,13 +17,13 @@ export default function Header() {
         <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
-            className="btn-primary max-sm:px-3 max-sm:py-2"
+            className="btn btn-primary max-sm:px-3 max-sm:py-2"
           >
             Schedule audience
           </button>
           <button
             type="button"
-            className="btn-outline max-sm:px-3 max-sm:py-2"
+            className="btn btn-outline max-sm:px-3 max-sm:py-2"
             aria-label="Menu"
           >
             <span className="max-sm:sr-only">Menu</span>

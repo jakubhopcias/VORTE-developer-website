@@ -6,17 +6,17 @@
   --color-black: #181914;
 
   /* Section inset — px-section / py-section-y / p-section / etc.
-   * Phone: 24px x, 64px y. Tablet+: 48px. */
+   * Phone: 24px x, 80px y. Tablet+: 48px x, 64px y. */
   --spacing-section: 1.5rem; /* 24px */
-  --spacing-section-y: 4rem; /* 64px */
-  --spacing-section-top: 4rem; /* 64px */
+  --spacing-section-y: 5rem; /* 80px */
+  --spacing-section-top: 5rem; /* 80px */
 }
 
 @media (width >= 48rem) {
   :root {
     --spacing-section: 3rem; /* 48px */
-    --spacing-section-y: 3rem; /* 48px */
-    --spacing-section-top: 3rem; /* 48px */
+    --spacing-section-y: 4rem; /* 64px */
+    --spacing-section-top: 4rem; /* 64px */
   }
 }
 
@@ -114,33 +114,7 @@
 
 /* —— Buttons —— */
 
-@utility btn-primary {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-family: var(--font-general-sans);
-  font-size: 1rem;
-  line-height: 1.2;
-  letter-spacing: 0;
-  border-radius: 0.75rem;
-  padding-inline: 1.25rem;
-  padding-block: 0.75rem;
-  background-color: var(--color-primary-white);
-  color: var(--color-black);
-  font-weight: 500;
-  transition: opacity 150ms;
-  text-wrap: nowrap;
-
-
-  &:hover {
-    opacity: 0.9;
-  }
-}
-
-@utility btn-outline {
-  text-wrap: nowrap;
+@utility btn {
   display: inline-flex;
   width: fit-content;
   align-items: center;
@@ -153,28 +127,52 @@
   border-radius: 0.75rem;
   padding-inline: 1.25rem;
   padding-block: 0.75rem;
+  text-wrap: nowrap;
+}
+
+@utility btn-primary {
+  background-color: var(--color-primary-white);
+  color: var(--color-black);
+  font-weight: 500;
+  transition: opacity 150ms;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+@utility btn-outline {
   border: 1px solid color-mix(in oklab, var(--color-primary-white) 70%, transparent);
   color: var(--color-primary-white);
   transition: border-color 150ms;
-
 
   &:hover {
     border-color: var(--color-primary-white);
   }
 }
 
+@utility btn-ghost {
+  color: var(--color-primary-white);
+  transition: opacity 150ms;
+  padding-left:0 !important;
+  padding-right:0 !important;
+  &:hover {
+    opacity: 0.8;
+  }
+  
+}
+
 @utility btn-group {
   display: flex;
   width: fit-content;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
-  padding: 0.75rem;
-  border: 1px solid color-mix(in oklab, var(--color-secondary-white) 50%, transparent);
-  border-radius: 0.75rem;
 
-  @media (width < 48rem) {
-    padding: 0;
-    border-width: 0;
+  @media (width >= 80rem) {
+    padding: 0.75rem;
+    border: 1px solid color-mix(in oklab, var(--color-secondary-white) 50%, transparent);
+    border-radius: 0.75rem;
+   
   }
 }

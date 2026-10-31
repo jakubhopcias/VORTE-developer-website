@@ -32,8 +32,8 @@ const figures: Figure[] = [
 
 export default function Figures() {
   return (
-    <section className="grid grid-cols-1 gap-12 px-section py-section-y md:h-[85svh] md:min-h-0 md:grid-cols-12 md:gap-0 md:p-section">
-      <div className="relative order-2 aspect-[4/5] overflow-hidden rounded-xl md:order-1 md:col-span-4 md:aspect-auto md:h-full md:min-h-0">
+    <section className="grid grid-cols-1 gap-12 px-section py-section-y md:h-[85svh] md:min-h-0 md:grid-cols-12 md:gap-8 md:p-section">
+      <div className="relative order-2 aspect-[4/5] overflow-hidden rounded-xl md:order-1 md:col-span-5 md:aspect-auto md:h-full md:min-h-0">
         <Image
           src="/concrete-and-chair.png"
           alt="Concrete interior with a lounge chair"
@@ -42,8 +42,7 @@ export default function Figures() {
           className="object-cover"
         />
       </div>
-      <div className="order-1 md:order-2 md:col-span-6 md:col-start-6 md:grid md:h-full md:min-h-0 md:grid-cols-6 lg:col-span-8 lg:col-start-5 lg:grid-cols-8">
-        <ul className="mx-auto grid w-full max-w-md grid-cols-1 gap-10 md:mx-0 md:max-w-none md:col-span-6 md:h-full md:content-evenly md:gap-0 md:py-8 lg:col-span-4 lg:col-start-3">
+        <ul className="mx-auto order-2 grid w-full max-w-md grid-cols-1 gap-8 md:mx-0 md:max-w-none md:col-span-7 md:h-full md:content-evenly md:gap-0 md:py-8 lg:col-span-5 lg:col-start-7">
           {figures.map((figure) => (
             <li
               key={figure.copy}
@@ -67,7 +66,6 @@ export default function Figures() {
             </li>
           ))}
         </ul>
-      </div>
     </section>
   );
 }

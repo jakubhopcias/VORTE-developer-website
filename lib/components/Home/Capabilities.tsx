@@ -51,7 +51,7 @@ export default function Capabilities() {
 
   return (
     <section className="grid grid-cols-1 gap-12 px-section py-section-y lg:h-svh lg:min-h-0 lg:grid-cols-12 lg:gap-12 lg:overflow-hidden lg:p-section">
-      <div className="flex flex-col justify-between gap-12 lg:col-span-6 lg:h-full lg:min-h-0 lg:py-section">
+      <div className="flex flex-col justify-between gap-12 lg:col-span-5 lg:h-full lg:min-h-0 lg:py-section">
         <div>
           <h2 className="headline text-primary-white">Capabilities</h2>
           <p className="small mt-6 max-w-md text-secondary-white">
@@ -94,7 +94,7 @@ export default function Capabilities() {
         </ul>
       </div>
 
-      <div className="relative flex h-[42svh] min-h-0 flex-col justify-end overflow-hidden rounded-xl p-6 lg:p-section lg:col-span-6 lg:h-full lg:min-h-0">
+      <div className="relative flex h-[42svh] min-h-0 flex-col justify-end overflow-hidden rounded-xl p-6 lg:p-section lg:col-span-6 lg:col-start-7 lg:h-full lg:min-h-0">
         <Image
           key={current.src}
           src={current.src}
