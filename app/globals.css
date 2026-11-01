@@ -3,6 +3,7 @@
 @theme static {
   --color-primary-white: #e4e3c3;
   --color-secondary-white: #98977f;
+  --color-tertiary-white: #71705B;
   --color-black: #181914;
 
   /* Section inset — px-section / py-section-y / p-section / etc.
@@ -95,7 +96,7 @@
 
 @utility small {
   font-family: var(--font-general-sans);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.35;
   letter-spacing: 0;
 
