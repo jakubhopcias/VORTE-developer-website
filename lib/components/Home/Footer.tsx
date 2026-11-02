@@ -3,6 +3,11 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
 type FieldKey = "fullName" | "email" | "phone" | "enquiry";
 
 type Field = {
@@ -94,6 +99,7 @@ export default function Footer() {
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [sent, setSent] = useState(false);
   const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const didAdvance = useRef(false);
   const step = steps[stepIndex];
   const reached = sent ? steps.length : stepIndex;
@@ -102,6 +108,28 @@ export default function Footer() {
     if (!didAdvance.current || sent) return;
     fieldRef.current?.focus();
   }, [stepIndex, sent]);
+
+  useEffect(() => {
+    const heading = headingRef.current;
+    if (!heading) return;
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, { autoAlpha: 0, y: 20 });
+      gsap.to(heading, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 1,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: heading,
+          start: "top 82%",
+          toggleActions: "play none none none",
+        },
+      });
+    }, heading);
+
+    return () => ctx.revert();
+  }, []);
 
   function validateStep(index: number) {
     const nextErrors: Partial<Record<FieldKey, string>> = {};
@@ -131,7 +159,10 @@ export default function Footer() {
   return (
     <footer className="col-span-12 flex flex-col gap-16 px-section py-section-y md:gap-24 md:p-section lg:gap-32">
       <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:items-start">
-        <h2 className="headline lg:col-span-5 lg:self-start">
+        <h2
+          ref={headingRef}
+          className="headline lg:col-span-5 lg:self-start opacity-0"
+        >
           Your requirements are unique. Our approach is absolute.
         </h2>
         <form
