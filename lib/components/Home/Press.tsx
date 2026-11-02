@@ -94,7 +94,7 @@ export default function Press() {
               className="relative z-10 h-8 w-auto max-w-[7.5rem] self-start object-contain object-left md:h-9"
             />
             <div className="relative z-10 flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between md:gap-8">
-              <p className="subtitle max-w-xl text-primary-white">
+              <p className="subheading max-w-xl text-primary-white">
                 “ {reference.quote} ”
               </p>
               <LinkUnderline

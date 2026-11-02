@@ -35,7 +35,7 @@ export default function ApartmentTiles() {
             <span className="small shrink-0 text-secondary-white">
               {String(index + 1).padStart(2, "0")}
             </span>
-            <span className="small truncate text-primary-white">
+            <span className="small truncate text-secondary-white transition-colors duration-500 group-hover:text-primary-white">
               {apartment.name}
             </span>
             <span className="h-0 w-0 overflow-hidden opacity-0 transition-[width,height,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:h-[5.625rem] group-hover:w-36 group-hover:opacity-100">
@@ -52,7 +52,7 @@ export default function ApartmentTiles() {
             </span>
             <LinkUnderline
               as="span"
-              className="xs justify-self-end text-secondary-white"
+              className="xs justify-self-end text-secondary-white transition-colors duration-500 group-hover:text-primary-white"
             >
               See apartment
             </LinkUnderline>

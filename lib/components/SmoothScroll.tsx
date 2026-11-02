@@ -5,6 +5,7 @@ import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { onIntroComplete } from "@/lib/intro";
+import { SCROLL_LOCK_EVENT, SCROLL_UNLOCK_EVENT } from "@/lib/scroll-lock";
 import "lenis/dist/lenis.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -47,12 +48,24 @@ export default function SmoothScroll() {
       ScrollTrigger.refresh();
     };
 
+    const lock = () => {
+      lenis.stop();
+    };
+
+    const unlock = () => {
+      lenis.start();
+    };
+
     requestAnimationFrame(refresh);
     window.addEventListener("load", refresh);
+    window.addEventListener(SCROLL_LOCK_EVENT, lock);
+    window.addEventListener(SCROLL_UNLOCK_EVENT, unlock);
     const unsubscribeIntro = onIntroComplete(refresh);
 
     return () => {
       window.removeEventListener("load", refresh);
+      window.removeEventListener(SCROLL_LOCK_EVENT, lock);
+      window.removeEventListener(SCROLL_UNLOCK_EVENT, unlock);
       unsubscribeIntro();
       gsap.ticker.remove(tick);
       lenis.off("scroll", onScroll);
