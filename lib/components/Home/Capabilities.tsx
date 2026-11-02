@@ -55,10 +55,23 @@ function emphasisedCopy(copy: string) {
   });
 }
 
+/** Viewport-heights per service switch while pinned. */
+const PIN_STEP_VH = 45;
+/** Extra hold after the last service before the pin releases. */
+const PIN_END_HOLD_VH = 40;
+
+function pinDistanceVh() {
+  return services.length * PIN_STEP_VH + PIN_END_HOLD_VH;
+}
+
 function indexFromProgress(progress: number) {
+  const serviceShare =
+    (services.length * PIN_STEP_VH) / pinDistanceVh();
+  const t = Math.min(1, progress / serviceShare);
+
   return Math.min(
     services.length - 1,
-    Math.floor(progress * services.length),
+    Math.floor(t * services.length),
   );
 }
 
@@ -174,7 +187,7 @@ export default function Capabilities() {
         const pinRange = {
           trigger: root,
           start: "top top",
-          end: `+=${services.length * 45}%`,
+          end: `+=${pinDistanceVh()}%`,
           scrub: 0.65,
         } as const;
 
