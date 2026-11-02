@@ -60,6 +60,27 @@ export default function Silentium() {
         },
       });
 
+      const list = root.querySelector<HTMLElement>("[data-silentium='list']");
+      const exitTargets = [list, cta].filter(
+        (el): el is HTMLElement => Boolean(el),
+      );
+
+      gsap.fromTo(
+        exitTargets,
+        { y: 0, autoAlpha: 1 },
+        {
+          y: 56,
+          autoAlpha: 0.2,
+          ease: "none",
+          scrollTrigger: {
+            trigger: root,
+            start: "bottom 90%",
+            end: "bottom top",
+            scrub: 0.55,
+          },
+        },
+      );
+
       gsap.set([line1, line2], {
         autoAlpha: 0,
         filter: "blur(12px)",
@@ -164,7 +185,10 @@ export default function Silentium() {
           </p>
         </div>
 
-        <div className="order-3 shrink-0 lg:order-2">
+        <div
+          data-silentium="list"
+          className="order-3 shrink-0 will-change-transform lg:order-2"
+        >
           <ApartmentTiles />
         </div>
       </div>
@@ -211,6 +235,7 @@ export default function Silentium() {
             </span>
           </p>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-6">
+
             <p className="subheading max-w-md font-secondary text-secondary-white transition-colors duration-500 group-hover/cta:text-primary-white">
               A masterclass in acoustic isolation and architectural mass.
               Designed for absolute privacy.
