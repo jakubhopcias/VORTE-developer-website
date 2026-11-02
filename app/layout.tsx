@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Header from "@/lib/components/Header";
+import IntroLoader from "@/lib/components/IntroLoader";
 import "./globals.css";
 import Footer from "@/lib/components/Home/Footer";
 
@@ -32,8 +33,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${melodrama.variable} ${generalSans.variable} h-full antialiased`}
     >
       <body className="grid grid-cols-12 min-h-full">
-      <Header />
-        <div className="col-start-1 col-span-full row-start-1 min-h-full">{children}</div>
+        <IntroLoader />
+        <Header />
+        <div className="col-start-1 col-span-full row-start-1 min-h-full">
+          {children}
+        </div>
         <Footer />
       </body>
     </html>

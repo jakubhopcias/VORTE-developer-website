@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { onIntroComplete } from "@/lib/intro";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -22,6 +23,8 @@ export default function Hero() {
     const links = root.querySelector<HTMLElement>("[data-hero='links']");
 
     if (!parallax || !line1 || !line2 || !copy || !links) return;
+
+    let unsubscribe = () => {};
 
     const ctx = gsap.context(() => {
       gsap.set([line1, line2], {
@@ -45,37 +48,44 @@ export default function Hero() {
         },
       );
 
-      const tl = gsap.timeline({
-        defaults: { ease: "power2.out" },
-      });
+      const playIntro = () => {
+        const tl = gsap.timeline({
+          defaults: { ease: "power2.out" },
+        });
 
-      tl.to(line1, {
-        autoAlpha: 1,
-        filter: "blur(0px)",
-        duration: 1.1,
-      })
-        .to(
-          line2,
-          {
-            autoAlpha: 1,
-            filter: "blur(0px)",
-            duration: 1.05,
-          },
-          "-=0.65",
-        )
-        .to(
-          [copy, links],
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.65,
-            stagger: 0.08,
-          },
-          "-=0.55",
-        );
+        tl.to(line1, {
+          autoAlpha: 1,
+          filter: "blur(0px)",
+          duration: 1.1,
+        })
+          .to(
+            line2,
+            {
+              autoAlpha: 1,
+              filter: "blur(0px)",
+              duration: 1.05,
+            },
+            "-=0.65",
+          )
+          .to(
+            [copy, links],
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.65,
+              stagger: 0.08,
+            },
+            "-=0.55",
+          );
+      };
+
+      unsubscribe = onIntroComplete(playIntro);
     }, root);
 
-    return () => ctx.revert();
+    return () => {
+      unsubscribe();
+      ctx.revert();
+    };
   }, []);
 
   return (
