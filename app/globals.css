@@ -81,7 +81,7 @@
 }
 
 @utility subheading {
-  font-family: var(--font-melodrama);
+  font-family: var(--font-secondary);
   font-size: clamp(1.25rem, 1.162rem + 0.38vw, 1.5rem);
   line-height: 1.2;
   letter-spacing: 0;
