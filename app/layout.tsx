@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Header from "@/lib/components/Header";
 import IntroLoader from "@/lib/components/IntroLoader";
+import DeathZone from "@/lib/components/DeathZone";
 import "./globals.css";
 import Footer from "@/lib/components/Home/Footer";
 
@@ -35,7 +36,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="grid grid-cols-12 min-h-full">
         <IntroLoader />
         <Header />
-        <div className="col-start-1 col-span-full row-start-1 min-h-full">
+        <DeathZone />
+        <div className="col-start-1 col-span-full row-start-1 min-h-full isolate">
           {children}
         </div>
         <Footer />

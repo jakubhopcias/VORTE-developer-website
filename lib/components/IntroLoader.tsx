@@ -108,6 +108,11 @@ export default function IntroLoader() {
             autoAlpha: 1,
             duration: 0.45,
             ease: "power2.out",
+            onComplete: () => {
+              gsap.set([header, headerLogo, headerMenu], {
+                clearProps: "opacity,visibility",
+              });
+            },
           });
           document.body.style.overflow = previousOverflow;
           document.body.style.paddingRight = previousPaddingRight;
