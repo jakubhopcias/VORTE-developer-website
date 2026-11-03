@@ -1,29 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LogoMark from "@/lib/components/LogoMark";
 import HamburgerMark from "@/lib/components/HamburgerMark";
 import SiteMenu from "@/lib/components/SiteMenu";
+import { onIntroComplete } from "@/lib/intro";
+import { HEADER_OVER_HERO_EVENT } from "@/lib/silentium-transition";
+import { getViewportHeight, syncViewportVars } from "@/lib/viewport";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pastHero, setPastHero] = useState(false);
+  const [snapChrome, setSnapChrome] = useState(false);
+
+  useEffect(() => {
+    syncViewportVars();
+
+    const onResize = () => syncViewportVars();
+    const onOverHero = () => {
+      setSnapChrome(true);
+      setPastHero(false);
+      requestAnimationFrame(() => setSnapChrome(false));
+    };
+
+    window.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener("resize", onResize);
+    window.addEventListener(HEADER_OVER_HERO_EVENT, onOverHero);
+    const unsubscribeIntro = onIntroComplete(() => {
+      syncViewportVars();
+      ScrollTrigger.refresh();
+    });
+
+    const st = ScrollTrigger.create({
+      start: 0,
+      end: "max",
+      onUpdate: (self) => {
+        setPastHero(self.scroll() >= getViewportHeight());
+      },
+      onRefresh: (self) => {
+        syncViewportVars();
+        setPastHero(self.scroll() >= getViewportHeight());
+      },
+    });
+
+    setPastHero(st.scroll() >= getViewportHeight());
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("resize", onResize);
+      window.removeEventListener(HEADER_OVER_HERO_EVENT, onOverHero);
+      unsubscribeIntro();
+      st.kill();
+    };
+  }, []);
 
   return (
     <>
       <header
         data-header
-        className="pointer-events-none relative sticky top-0 z-50 col-span-full row-start-1 mt-[calc(50svh-57px)] h-fit w-full self-start px-section"
+        className={`pointer-events-none relative sticky top-0 z-50 col-span-full row-start-1 mt-[calc(var(--app-vh,100svh)/2-var(--header-h,57px))] h-fit w-full self-start px-section ${
+          snapChrome ? "" : "transition-colors duration-300"
+        } ${pastHero ? "bg-[var(--color-black)]" : "bg-transparent"}`}
       >
-        <div className="pointer-events-auto relative flex h-[57px] w-full min-w-0 items-center justify-between gap-4 mix-blend-difference">
-          <div data-header-logo className="shrink-0 text-primary-white">
-            <LogoMark className="h-[0.8125rem] w-auto" />
+        <div
+          className={`pointer-events-auto relative flex h-[57px] w-full min-w-0 items-center justify-between gap-4 ${
+            pastHero ? "" : "mix-blend-difference"
+          }`}
+        >
+          <Link
+            href="/"
+            data-header-logo
+            aria-label="VORTE home"
+            className="shrink-0 overflow-hidden text-primary-white"
+          >
+            <div
+              data-header-logo-move
+              className="will-change-transform"
+            >
+              <LogoMark className="h-[0.8125rem] w-auto" />
+            </div>
             <span className="sr-only">VORTE</span>
-          </div>
+          </Link>
           <button
             type="button"
             data-header-menu
             onClick={() => setMenuOpen(true)}
-            className="group inline-flex items-center gap-2 text-secondary-white transition-colors duration-500 hover:text-primary-white"
+            className="group inline-flex items-center gap-2 duration-500"
             aria-label="Menu"
             aria-expanded={menuOpen}
           >
@@ -33,7 +100,9 @@ export default function Header() {
         </div>
         <div
           data-header-border
-          className="absolute inset-x-0 bottom-0 h-px origin-left bg-tertiary-white will-change-transform"
+          className={`absolute inset-x-0 bottom-0 h-px origin-left bg-tertiary-white will-change-transform ${
+            snapChrome ? "" : "transition-opacity duration-300"
+          } ${pastHero ? "opacity-0" : "opacity-100"}`}
         />
       </header>
       <SiteMenu open={menuOpen} onClose={() => setMenuOpen(false)} />

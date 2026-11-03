@@ -1,21 +1,43 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ApartmentTiles from "@/lib/components/Home/Silentium/ApartmentTiles";
 import LinkUnderline from "@/lib/components/LinkUnderline";
+import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
+import {
+  SILENTIUM_HERO_SCALE,
+  SILENTIUM_HREF,
+  SILENTIUM_IMAGE,
+  SILENTIUM_LAYER_ATTR,
+  forceHeaderOverHero,
+  getAppBlack,
+  markSilentiumEnter,
+  removeSilentiumTransitionLayer,
+} from "@/lib/silentium-transition";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Silentium() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const enteringRef = useRef(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    router.prefetch(SILENTIUM_HREF);
+  }, [router]);
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+
+    // Fresh visit to home: always re-enable interactions + clear leftovers.
+    enteringRef.current = false;
+    removeSilentiumTransitionLayer();
+    unlockScroll();
 
     const media = root.querySelector<HTMLElement>("[data-silentium='media']");
     const intro = root.querySelector<HTMLElement>("[data-silentium='intro']");
@@ -27,9 +49,33 @@ export default function Silentium() {
     const line2 = root.querySelector<HTMLElement>(
       "[data-silentium='cta-line-2']",
     );
+    const list = root.querySelector<HTMLElement>("[data-silentium='list']");
     const header = document.querySelector<HTMLElement>("[data-header]");
 
     if (!media || !intro || !cta || !veil || !line1 || !line2) return;
+
+    const resetSectionVisibility = () => {
+      gsap.set([media, cta, intro, list, veil].filter(Boolean), {
+        clearProps: "opacity,visibility,transform,filter",
+      });
+      gsap.set([line1, line2], {
+        autoAlpha: 0,
+        filter: "blur(12px)",
+      });
+      gsap.set(veil, { autoAlpha: 0 });
+      if (header) gsap.set(header, { clearProps: "opacity,visibility" });
+    };
+
+    resetSectionVisibility();
+
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      enteringRef.current = false;
+      removeSilentiumTransitionLayer();
+      unlockScroll();
+      resetSectionVisibility();
+    };
+    window.addEventListener("pageshow", onPageShow);
 
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -60,7 +106,6 @@ export default function Silentium() {
         },
       });
 
-      const list = root.querySelector<HTMLElement>("[data-silentium='list']");
       const exitTargets = [list, cta].filter(
         (el): el is HTMLElement => Boolean(el),
       );
@@ -81,79 +126,194 @@ export default function Silentium() {
         },
       );
 
-      gsap.set([line1, line2], {
-        autoAlpha: 0,
-        filter: "blur(12px)",
-      });
-      gsap.set(veil, { autoAlpha: 0 });
-
       const hoverTl = gsap
         .timeline({
           paused: true,
           defaults: { ease: "power2.out" },
         })
-        .to(
-          veil,
-          {
-            autoAlpha: 1,
-            duration: 0.35,
-          },
-          0,
-        )
+        .to(veil, { autoAlpha: 1, duration: 0.35 }, 0)
         .to(
           line1,
-          {
-            autoAlpha: 1,
-            filter: "blur(0px)",
-            duration: 0.55,
-          },
+          { autoAlpha: 1, filter: "blur(0px)", duration: 0.55 },
           0,
         )
         .to(
           line2,
-          {
-            autoAlpha: 1,
-            filter: "blur(0px)",
-            duration: 0.5,
-          },
+          { autoAlpha: 1, filter: "blur(0px)", duration: 0.5 },
           0.16,
         );
 
       if (header) {
-        hoverTl.to(
-          header,
-          {
-            autoAlpha: 0.15,
-            duration: 0.35,
-          },
-          0,
-        );
+        hoverTl.to(header, { autoAlpha: 0.15, duration: 0.35 }, 0);
       }
 
       const playHover = () => {
+        if (enteringRef.current) return;
         hoverTl.play();
       };
 
       const reverseHover = () => {
+        if (enteringRef.current) return;
         hoverTl.reverse();
+      };
+
+      const enterSilentium = async (event: Event) => {
+        event.preventDefault();
+        if (enteringRef.current) return;
+        enteringRef.current = true;
+
+        hoverTl.reverse();
+        lockScroll();
+
+        const mediaInner = media.querySelector<HTMLElement>(":scope > div");
+        const rect = cta.getBoundingClientRect();
+        const radius = getComputedStyle(cta).borderRadius || "0px";
+        const black = getAppBlack();
+        let startScale = 1.18;
+        if (mediaInner) {
+          try {
+            startScale = new DOMMatrix(
+              getComputedStyle(mediaInner).transform,
+            ).a;
+          } catch {
+            startScale = 1.18;
+          }
+        }
+        if (!Number.isFinite(startScale) || startScale <= 0) startScale = 1.18;
+
+        removeSilentiumTransitionLayer();
+
+        const layer = document.createElement("div");
+        layer.setAttribute(SILENTIUM_LAYER_ATTR, "layer");
+        Object.assign(layer.style, {
+          position: "fixed",
+          inset: "0",
+          zIndex: "120",
+          pointerEvents: "none",
+        });
+
+        const frame = document.createElement("div");
+        Object.assign(frame.style, {
+          position: "absolute",
+          top: `${rect.top}px`,
+          left: `${rect.left}px`,
+          width: `${rect.width}px`,
+          height: `${rect.height}px`,
+          overflow: "hidden",
+          borderRadius: radius,
+          background: black,
+          willChange: "top, left, width, height, border-radius",
+        });
+
+        const imgWrap = document.createElement("div");
+        Object.assign(imgWrap.style, {
+          position: "absolute",
+          inset: "0",
+          transform: `scale(${startScale})`,
+          transformOrigin: "center center",
+          willChange: "transform",
+        });
+
+        const img = document.createElement("img");
+        img.src = SILENTIUM_IMAGE;
+        img.alt = "";
+        img.decoding = "sync";
+        Object.assign(img.style, {
+          position: "absolute",
+          inset: "0",
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition: "center",
+        });
+
+        // Same bottom wash as destination hero — avoids crop jump on handoff.
+        const gradient = document.createElement("div");
+        Object.assign(gradient.style, {
+          position: "absolute",
+          left: "0",
+          right: "0",
+          bottom: "0",
+          height: "85%",
+          background: `linear-gradient(to top, ${black}, transparent)`,
+          opacity: "0",
+          pointerEvents: "none",
+        });
+
+        imgWrap.appendChild(img);
+        frame.appendChild(imgWrap);
+        frame.appendChild(gradient);
+        layer.appendChild(frame);
+        document.body.appendChild(layer);
+
+        const tl = gsap.timeline({
+          defaults: { ease: "power3.inOut" },
+        });
+
+        // No fade / delay — expand alone covers the page (above header).
+        tl.to(
+          frame,
+          {
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            borderRadius: 0,
+            duration: 0.9,
+          },
+          0,
+        );
+        tl.to(
+          imgWrap,
+          {
+            scale: SILENTIUM_HERO_SCALE,
+            duration: 0.9,
+          },
+          0,
+        );
+        tl.to(gradient, { opacity: 1, duration: 0.55, ease: "power2.out" }, 0.25);
+
+        try {
+          await tl.then();
+        } catch {
+          enteringRef.current = false;
+          unlockScroll();
+          removeSilentiumTransitionLayer();
+          resetSectionVisibility();
+          return;
+        }
+
+        resetSectionVisibility();
+        forceHeaderOverHero();
+        markSilentiumEnter();
+        router.push(SILENTIUM_HREF);
       };
 
       cta.addEventListener("pointerenter", playHover);
       cta.addEventListener("pointerleave", reverseHover);
       cta.addEventListener("focus", playHover);
       cta.addEventListener("blur", reverseHover);
+      cta.addEventListener("click", enterSilentium);
 
       return () => {
         cta.removeEventListener("pointerenter", playHover);
         cta.removeEventListener("pointerleave", reverseHover);
         cta.removeEventListener("focus", playHover);
         cta.removeEventListener("blur", reverseHover);
-        if (header) gsap.set(header, { clearProps: "opacity,visibility" });
+        cta.removeEventListener("click", enterSilentium);
       };
     }, root);
 
-    return () => ctx.revert();
-  }, []);
+    return () => {
+      window.removeEventListener("pageshow", onPageShow);
+      ctx.revert();
+      // If we left mid-enter, layer stays for handoff; otherwise clear.
+      if (!enteringRef.current) {
+        removeSilentiumTransitionLayer();
+        resetSectionVisibility();
+      }
+    };
+  }, [router]);
 
   return (
     <div
@@ -193,8 +353,8 @@ export default function Silentium() {
         </div>
       </div>
 
-      <Link
-        href="/silentium-apartments"
+      <a
+        href={SILENTIUM_HREF}
         data-silentium-cta
         aria-label="Enter Silentium"
         className="group/cta group relative z-50 order-2 flex aspect-[4/5] flex-col overflow-hidden rounded-xl p-section lg:aspect-auto lg:h-full lg:min-h-0 lg:w-1/2"
@@ -205,7 +365,7 @@ export default function Silentium() {
         >
           <div className="absolute inset-0 scale-[1.18] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/cta:scale-[1.3]">
             <Image
-              src="/Silentium-building.webp"
+              src={SILENTIUM_IMAGE}
               alt="Silentium building"
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
@@ -235,7 +395,6 @@ export default function Silentium() {
             </span>
           </p>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-6">
-
             <p className="subheading max-w-md font-secondary text-secondary-white transition-colors duration-500 group-hover/cta:text-primary-white">
               A masterclass in acoustic isolation and architectural mass.
               Designed for absolute privacy.
@@ -248,7 +407,7 @@ export default function Silentium() {
             </LinkUnderline>
           </div>
         </div>
-      </Link>
+      </a>
     </div>
   );
 }

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Header from "@/lib/components/Header";
 import IntroLoader from "@/lib/components/IntroLoader";
-import DeathZone from "@/lib/components/DeathZone";
 import SmoothScroll from "@/lib/components/SmoothScroll";
 import Footer from "@/lib/components/Home/Footer";
 import "./globals.css";
@@ -38,7 +37,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SmoothScroll />
         <IntroLoader />
         <Header />
-        <DeathZone />
         <div className="col-start-1 col-span-full row-start-1 min-h-full isolate">
           {children}
         </div>

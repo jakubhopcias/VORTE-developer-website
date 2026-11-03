@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import LogoMark from "@/lib/components/LogoMark";
 import LinkUnderline from "@/lib/components/LinkUnderline";
@@ -61,9 +62,19 @@ const items: MenuItem[] = [
 const primaryItems = items.filter((item) => item.kind === "primary");
 const serviceItems = items.filter((item) => item.kind === "service");
 
+function itemIdForPath(pathname: string) {
+  const match = items.find((item) =>
+    item.href === "/"
+      ? pathname === "/"
+      : pathname === item.href || pathname.startsWith(`${item.href}/`),
+  );
+  return match?.id ?? items[0].id;
+}
+
 export default function SiteMenu({ open, onClose }: SiteMenuProps) {
+  const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement>(null);
-  const logoRef = useRef<HTMLDivElement>(null);
+  const logoMoveRef = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState(items[0].id);
   const [displayedId, setDisplayedId] = useState(items[0].id);
   const [copyVisible, setCopyVisible] = useState(true);
@@ -71,8 +82,13 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
   const active = items.find((item) => item.id === displayedId) ?? items[0];
 
   useEffect(() => {
-    if (open) setMounted(true);
-  }, [open]);
+    if (!open) return;
+    const id = itemIdForPath(pathname);
+    setActiveId(id);
+    setDisplayedId(id);
+    setCopyVisible(true);
+    setMounted(true);
+  }, [open, pathname]);
 
   useEffect(() => {
     if (activeId === displayedId) return;
@@ -80,7 +96,7 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
     const timer = window.setTimeout(() => {
       setDisplayedId(activeId);
       setCopyVisible(true);
-    }, 220);
+    }, 90);
     return () => window.clearTimeout(timer);
   }, [activeId, displayedId]);
 
@@ -88,9 +104,11 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
     if (!mounted) return;
 
     const root = rootRef.current;
-    const menuLogo = logoRef.current;
-    const headerLogo = document.querySelector<HTMLElement>("[data-header-logo]");
-    if (!root || !menuLogo) return;
+    const menuLogoMove = logoMoveRef.current;
+    const headerLogoMove = document.querySelector<HTMLElement>(
+      "[data-header-logo-move]",
+    );
+    if (!root || !menuLogoMove) return;
 
     const previousOverflow = document.body.style.overflow;
     const reveals = root.querySelectorAll("[data-menu='reveal']");
@@ -100,92 +118,88 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
       lockScroll();
       document.body.style.overflow = "hidden";
 
-      gsap.set(menuLogo, { clearProps: "transform" });
       tl.fromTo(
         root,
         { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 0.4, ease: "power2.out" },
+        { autoAlpha: 1, duration: 0.35, ease: "power2.out" },
         0,
       );
 
-      const first = headerLogo?.getBoundingClientRect();
-      const last = menuLogo.getBoundingClientRect();
-
-      if (headerLogo && first && last.width > 0) {
-        const dx = first.left - last.left;
-        const dy = first.top - last.top;
-        const scale = first.width / last.width;
-
-        gsap.set(headerLogo, { opacity: 0 });
-        tl.fromTo(
-          menuLogo,
+      if (headerLogoMove) {
+        tl.to(
+          headerLogoMove,
           {
-            x: dx,
-            y: dy,
-            scale,
-            transformOrigin: "left top",
+            yPercent: 130,
+            duration: 0.4,
+            ease: "power2.in",
           },
-          {
-            x: 0,
-            y: 0,
-            scale: 1,
-            duration: 0.85,
-            ease: "power3.inOut",
-          },
-          0.05,
+          0,
         );
       }
 
       tl.fromTo(
+        menuLogoMove,
+        { yPercent: -130 },
+        {
+          yPercent: 0,
+          duration: 0.45,
+          ease: "power2.out",
+        },
+        0.22,
+      );
+
+      tl.fromTo(
         reveals,
-        { autoAlpha: 0, y: 16 },
+        { autoAlpha: 0, y: 12 },
         {
           autoAlpha: 1,
           y: 0,
-          duration: 0.65,
-          stagger: 0.05,
+          duration: 0.5,
+          stagger: 0.04,
           ease: "power2.out",
         },
-        0.2,
+        0.18,
       );
     } else {
-      const first = menuLogo.getBoundingClientRect();
-      const last = headerLogo?.getBoundingClientRect();
-
       tl.to(
         reveals,
         {
           autoAlpha: 0,
-          y: 10,
-          duration: 0.28,
+          y: 8,
+          duration: 0.22,
           ease: "power2.in",
         },
         0,
       );
 
-      if (headerLogo && last && first.width > 0) {
-        const dx = last.left - first.left;
-        const dy = last.top - first.top;
-        const scale = last.width / first.width;
+      tl.to(
+        menuLogoMove,
+        {
+          yPercent: 130,
+          duration: 0.4,
+          ease: "power2.in",
+        },
+        0,
+      );
 
-        tl.to(
-          menuLogo,
+      if (headerLogoMove) {
+        tl.fromTo(
+          headerLogoMove,
+          { yPercent: -130 },
           {
-            x: dx,
-            y: dy,
-            scale,
-            transformOrigin: "left top",
-            duration: 0.75,
-            ease: "power3.inOut",
+            yPercent: 0,
+            duration: 0.45,
+            ease: "power2.out",
           },
-          0,
-        ).to(root, { autoAlpha: 0, duration: 0.35, ease: "power2.inOut" }, 0.4);
-      } else {
-        tl.to(root, { autoAlpha: 0, duration: 0.35, ease: "power2.inOut" }, 0.1);
+          0.2,
+        );
       }
 
+      tl.to(root, { autoAlpha: 0, duration: 0.3, ease: "power2.inOut" }, 0.28);
+
       tl.add(() => {
-        if (headerLogo) gsap.set(headerLogo, { clearProps: "opacity" });
+        gsap.set(menuLogoMove, { clearProps: "transform" });
+        if (headerLogoMove) gsap.set(headerLogoMove, { clearProps: "transform" });
         document.body.style.overflow = previousOverflow;
         unlockScroll();
         setMounted(false);
@@ -219,19 +233,21 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
       className="fixed inset-0 z-[80] flex flex-col bg-black px-section opacity-0"
     >
       <div className="relative flex h-[57px] shrink-0 items-center justify-between">
-        <div
-          ref={logoRef}
-          data-menu-logo
-          className="text-primary-white will-change-transform"
-        >
-          <LogoMark className="h-[0.8125rem] w-auto" />
+        <div className="overflow-hidden text-primary-white">
+          <div
+            ref={logoMoveRef}
+            data-menu-logo-move
+            className="will-change-transform"
+          >
+            <LogoMark className="h-[0.8125rem] w-auto" />
+          </div>
           <span className="sr-only">VORTE</span>
         </div>
         <button
           type="button"
           data-menu="reveal"
           onClick={onClose}
-          className="small text-secondary-white transition-colors duration-500 hover:text-primary-white"
+          className="small text-secondary-white transition-colors duration-300 hover:text-primary-white"
         >
           Close
         </button>
@@ -241,7 +257,7 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
         <nav
           data-menu="reveal"
           aria-label="Primary"
-          className="flex flex-col gap-12 md:col-span-5 md:col-start-3"
+          className="flex flex-col gap-16 md:col-span-5 md:col-start-3"
         >
           {primaryItems.map((item) => (
             <Link
@@ -250,7 +266,7 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
               onClick={onClose}
               onMouseEnter={() => setActiveId(item.id)}
               onFocus={() => setActiveId(item.id)}
-              className={`title font-secondary transition-colors duration-500 ${
+              className={`title font-secondary transition-colors duration-150 ${
                 activeId === item.id
                   ? "text-primary-white"
                   : "text-secondary-white hover:text-primary-white"
@@ -285,7 +301,7 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
                   onClick={onClose}
                   onMouseEnter={() => setActiveId(item.id)}
                   onFocus={() => setActiveId(item.id)}
-                  className={`subtitle font-secondary transition-colors duration-500 ${
+                  className={`subtitle font-secondary transition-colors duration-150 ${
                     activeId === item.id
                       ? "text-primary-white"
                       : "text-secondary-white hover:text-primary-white"
@@ -303,20 +319,16 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
           className="flex flex-col justify-between items-end md:col-span-3 md:col-start-8 md:h-full"
         >
           <p
-            className={`small max-w-sm text-secondary-white transition-opacity duration-300 ${
+            className={`small max-w-sm text-secondary-white transition-opacity duration-150 ${
               copyVisible ? "opacity-100" : "opacity-0"
             }`}
           >
             {active.copy}
           </p>
-          <Link
-            href="/#footer"
-            onClick={onClose}
-            className="group w-fit"
-          >
+          <Link href="#footer" onClick={onClose} className="group w-fit">
             <LinkUnderline
               as="span"
-              className="small text-secondary-white transition-colors duration-500 group-hover:text-primary-white"
+              className="small text-secondary-white transition-colors duration-300 group-hover:text-primary-white"
             >
               Schedule audience
             </LinkUnderline>

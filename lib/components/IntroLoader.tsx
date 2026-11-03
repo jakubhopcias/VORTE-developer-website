@@ -4,18 +4,30 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import LogoMark from "@/lib/components/LogoMark";
-import { emitIntroComplete } from "@/lib/intro";
+import { emitIntroComplete, hasIntroCompleted } from "@/lib/intro";
+import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
+import { syncViewportVars } from "@/lib/viewport";
 
 const HERO_IMAGE = "/Silentium-building-reverse.jpg";
 
 export default function IntroLoader() {
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(pathname === "/");
+  const [active, setActive] = useState(
+    () => pathname === "/" && !hasIntroCompleted(),
+  );
 
   useLayoutEffect(() => {
     if (pathname !== "/") {
       setActive(false);
+      emitIntroComplete();
+      return;
+    }
+
+    if (hasIntroCompleted()) {
+      setActive(false);
+      const header = document.querySelector<HTMLElement>("[data-header]");
+      if (header) gsap.set(header, { clearProps: "opacity,visibility" });
       emitIntroComplete();
       return;
     }
@@ -42,14 +54,12 @@ export default function IntroLoader() {
     let cancelled = false;
     const progress = { value: 0 };
 
+    // scrollbar-gutter: stable already reserves space — don't add paddingRight
+    // or the layout jumps when overflow is restored after the loader.
     const previousOverflow = document.body.style.overflow;
-    const previousPaddingRight = document.body.style.paddingRight;
-    const scrollbarWidth =
-      window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
+    lockScroll();
+    syncViewportVars(header);
 
     gsap.set(header, { autoAlpha: 0 });
     gsap.set([headerLogo, headerMenu], { autoAlpha: 0 });
@@ -95,15 +105,16 @@ export default function IntroLoader() {
       await loadTl.then();
       if (cancelled) return;
 
-      const logoRect = logo.getBoundingClientRect();
-      const targetRect = headerLogo?.getBoundingClientRect();
+      const headerLogoMove = document.querySelector<HTMLElement>(
+        "[data-header-logo-move]",
+      );
 
       const exitTl = gsap.timeline({
         defaults: { ease: "power3.inOut" },
         onComplete: () => {
           if (cancelled) return;
-          gsap.set(headerLogo, { autoAlpha: 1 });
           gsap.set(logo, { autoAlpha: 0 });
+          gsap.set(headerLogoMove, { clearProps: "transform" });
           gsap.to(headerMenu, {
             autoAlpha: 1,
             duration: 0.45,
@@ -115,7 +126,8 @@ export default function IntroLoader() {
             },
           });
           document.body.style.overflow = previousOverflow;
-          document.body.style.paddingRight = previousPaddingRight;
+          unlockScroll();
+          syncViewportVars(header);
           emitIntroComplete();
           setActive(false);
         },
@@ -146,23 +158,29 @@ export default function IntroLoader() {
         );
       }
 
-      if (headerLogo && targetRect) {
-        const scale = targetRect.width / logoRect.width;
+      // Clip-slide: loader logo exits down, header logo enters from top.
+      exitTl.to(
+        logo,
+        {
+          yPercent: 130,
+          duration: 0.55,
+          ease: "power2.in",
+        },
+        0.18,
+      );
 
-        exitTl.to(
-          logo,
+      if (headerLogo && headerLogoMove) {
+        gsap.set(headerLogo, { autoAlpha: 1 });
+        exitTl.fromTo(
+          headerLogoMove,
+          { yPercent: -130 },
           {
-            x: targetRect.left - logoRect.left,
-            y: targetRect.top - logoRect.top,
-            scale,
-            transformOrigin: "left top",
-            duration: 1,
-            ease: "power3.inOut",
+            yPercent: 0,
+            duration: 0.55,
+            ease: "power2.out",
           },
-          0.18,
+          0.52,
         );
-      } else {
-        exitTl.to(logo, { autoAlpha: 0, duration: 0.4 }, 0.18);
       }
     };
 
@@ -171,7 +189,7 @@ export default function IntroLoader() {
     return () => {
       cancelled = true;
       document.body.style.overflow = previousOverflow;
-      document.body.style.paddingRight = previousPaddingRight;
+      unlockScroll();
     };
   }, [pathname]);
 
@@ -191,11 +209,10 @@ export default function IntroLoader() {
 
       <div className="absolute inset-0 flex items-center justify-center px-section">
         <div className="w-[min(22rem,90vw)] text-primary-white">
-          <div
-            data-intro="logo"
-            className="relative z-10 mx-auto w-fit will-change-transform"
-          >
-            <LogoMark className="h-auto w-[12rem]" />
+          <div className="relative z-10 mx-auto w-fit overflow-hidden">
+            <div data-intro="logo" className="will-change-transform">
+              <LogoMark className="h-auto w-[12rem]" />
+            </div>
           </div>
           <div data-intro="meta" className="mt-3 flex items-center gap-4">
             <div className="relative h-px min-w-0 flex-1 overflow-hidden bg-secondary-white/20">

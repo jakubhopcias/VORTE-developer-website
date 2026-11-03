@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { onIntroComplete } from "@/lib/intro";
 import { SCROLL_LOCK_EVENT, SCROLL_UNLOCK_EVENT } from "@/lib/scroll-lock";
+import { syncViewportVars } from "@/lib/viewport";
 import "lenis/dist/lenis.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -44,6 +45,7 @@ export default function SmoothScroll() {
     gsap.ticker.lagSmoothing(0);
 
     const refresh = () => {
+      syncViewportVars();
       lenis.resize();
       ScrollTrigger.refresh();
     };
@@ -54,13 +56,20 @@ export default function SmoothScroll() {
 
     const unlock = () => {
       lenis.start();
+      refresh();
+    };
+
+    const afterIntro = () => {
+      syncViewportVars();
+      lenis.resize();
+      ScrollTrigger.refresh();
     };
 
     requestAnimationFrame(refresh);
     window.addEventListener("load", refresh);
     window.addEventListener(SCROLL_LOCK_EVENT, lock);
     window.addEventListener(SCROLL_UNLOCK_EVENT, unlock);
-    const unsubscribeIntro = onIntroComplete(refresh);
+    const unsubscribeIntro = onIntroComplete(afterIntro);
 
     return () => {
       window.removeEventListener("load", refresh);

@@ -5,7 +5,10 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LinkUnderline from "@/lib/components/LinkUnderline";
-import { onIntroComplete } from "@/lib/intro";
+import { hasIntroCompleted, onIntroComplete } from "@/lib/intro";
+import { unlockScroll } from "@/lib/scroll-lock";
+import { removeSilentiumTransitionLayer } from "@/lib/silentium-transition";
+import { syncViewportVars } from "@/lib/viewport";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -15,6 +18,13 @@ export default function Hero() {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+
+    removeSilentiumTransitionLayer();
+    unlockScroll();
+    syncViewportVars();
+
+    const header = document.querySelector<HTMLElement>("[data-header]");
+    if (header) gsap.set(header, { clearProps: "opacity,visibility" });
 
     const parallax = root.querySelector<HTMLElement>("[data-hero='parallax']");
     const title = root.querySelector<HTMLElement>("[data-hero='title']");
@@ -28,8 +38,10 @@ export default function Hero() {
       return;
 
     let unsubscribe = () => {};
+    let introTl: gsap.core.Timeline | null = null;
 
     const ctx = gsap.context(() => {
+      gsap.set([title, aside], { clearProps: "opacity,visibility,transform" });
       gsap.set([line1, line2], {
         autoAlpha: 0,
         filter: "blur(12px)",
@@ -77,26 +89,30 @@ export default function Hero() {
       });
 
       const playIntro = () => {
-        const tl = gsap.timeline({
+        syncViewportVars();
+        ScrollTrigger.refresh();
+
+        gsap.set([title, aside], { autoAlpha: 1, yPercent: 0 });
+        introTl?.kill();
+        introTl = gsap.timeline({
           defaults: { ease: "power2.out" },
         });
 
-        tl.to(line1, {
-          autoAlpha: 1,
-          filter: "blur(0px)",
-          duration: 1.1,
-        })
-          .to(
+        introTl
+          .fromTo(
+            line1,
+            { autoAlpha: 0, filter: "blur(12px)" },
+            { autoAlpha: 1, filter: "blur(0px)", duration: 1.1 },
+          )
+          .fromTo(
             line2,
-            {
-              autoAlpha: 1,
-              filter: "blur(0px)",
-              duration: 1.05,
-            },
+            { autoAlpha: 0, filter: "blur(12px)" },
+            { autoAlpha: 1, filter: "blur(0px)", duration: 1.05 },
             "-=0.65",
           )
-          .to(
+          .fromTo(
             [copy, links],
+            { autoAlpha: 0, y: 28 },
             {
               autoAlpha: 1,
               y: 0,
@@ -107,17 +123,27 @@ export default function Hero() {
           );
       };
 
-      unsubscribe = onIntroComplete(playIntro);
+      if (hasIntroCompleted()) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(playIntro);
+        });
+      } else {
+        unsubscribe = onIntroComplete(playIntro);
+      }
     }, root);
 
     return () => {
       unsubscribe();
+      introTl?.kill();
       ctx.revert();
     };
   }, []);
 
   return (
-    <section ref={rootRef} className="relative h-svh overflow-hidden bg-black">
+    <section
+      ref={rootRef}
+      className="relative h-[var(--app-vh,100svh)] overflow-hidden bg-black"
+    >
       <div className="absolute inset-0 overflow-hidden">
         <div
           data-hero="parallax"

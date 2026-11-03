@@ -33,6 +33,8 @@
     color: var(--color-primary-white);
     font-synthesis: none;
     scrollbar-gutter: stable;
+    --app-vh: 100svh;
+    --header-h: 57px;
   }
 
   body {
