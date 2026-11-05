@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import gsap from "gsap";
-import LogoMark from "@/lib/components/LogoMark";
 import LinkUnderline from "@/lib/components/LinkUnderline";
 import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 
@@ -74,7 +73,6 @@ function itemIdForPath(pathname: string) {
 export default function SiteMenu({ open, onClose }: SiteMenuProps) {
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement>(null);
-  const logoMoveRef = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState(items[0].id);
   const [displayedId, setDisplayedId] = useState(items[0].id);
   const [copyVisible, setCopyVisible] = useState(true);
@@ -104,11 +102,7 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
     if (!mounted) return;
 
     const root = rootRef.current;
-    const menuLogoMove = logoMoveRef.current;
-    const headerLogoMove = document.querySelector<HTMLElement>(
-      "[data-header-logo-move]",
-    );
-    if (!root || !menuLogoMove) return;
+    if (!root) return;
 
     const previousOverflow = document.body.style.overflow;
     const reveals = root.querySelectorAll("[data-menu='reveal']");
@@ -121,85 +115,37 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
       tl.fromTo(
         root,
         { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 0.35, ease: "power2.out" },
+        { autoAlpha: 1, duration: 0.28, ease: "power2.out" },
         0,
-      );
-
-      if (headerLogoMove) {
-        tl.to(
-          headerLogoMove,
-          {
-            yPercent: 130,
-            duration: 0.4,
-            ease: "power2.in",
-          },
-          0,
-        );
-      }
-
-      tl.fromTo(
-        menuLogoMove,
-        { yPercent: -130 },
-        {
-          yPercent: 0,
-          duration: 0.45,
-          ease: "power2.out",
-        },
-        0.22,
       );
 
       tl.fromTo(
         reveals,
-        { autoAlpha: 0, y: 12 },
+        { autoAlpha: 0, y: 10 },
         {
           autoAlpha: 1,
           y: 0,
-          duration: 0.5,
-          stagger: 0.04,
+          duration: 0.4,
+          stagger: 0.03,
           ease: "power2.out",
         },
-        0.18,
+        0.06,
       );
     } else {
       tl.to(
         reveals,
         {
           autoAlpha: 0,
-          y: 8,
-          duration: 0.22,
+          y: 6,
+          duration: 0.18,
           ease: "power2.in",
         },
         0,
       );
 
-      tl.to(
-        menuLogoMove,
-        {
-          yPercent: 130,
-          duration: 0.4,
-          ease: "power2.in",
-        },
-        0,
-      );
-
-      if (headerLogoMove) {
-        tl.fromTo(
-          headerLogoMove,
-          { yPercent: -130 },
-          {
-            yPercent: 0,
-            duration: 0.45,
-            ease: "power2.out",
-          },
-          0.2,
-        );
-      }
-
-      tl.to(root, { autoAlpha: 0, duration: 0.3, ease: "power2.inOut" }, 0.28);
+      tl.to(root, { autoAlpha: 0, duration: 0.22, ease: "power2.inOut" }, 0.08);
 
       tl.add(() => {
-        gsap.set(menuLogoMove, { clearProps: "transform" });
-        if (headerLogoMove) gsap.set(headerLogoMove, { clearProps: "transform" });
         document.body.style.overflow = previousOverflow;
         unlockScroll();
         setMounted(false);
@@ -230,29 +176,8 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
       role="dialog"
       aria-modal="true"
       aria-label="Site menu"
-      className="fixed inset-0 z-[80] flex flex-col bg-black px-section opacity-0"
+      className="fixed inset-0 z-[80] flex flex-col bg-[var(--color-black)] px-section pt-[57px] opacity-0"
     >
-      <div className="relative flex h-[57px] shrink-0 items-center justify-between">
-        <div className="overflow-hidden text-primary-white">
-          <div
-            ref={logoMoveRef}
-            data-menu-logo-move
-            className="will-change-transform"
-          >
-            <LogoMark className="h-[0.8125rem] w-auto" />
-          </div>
-          <span className="sr-only">VORTE</span>
-        </div>
-        <button
-          type="button"
-          data-menu="reveal"
-          onClick={onClose}
-          className="small text-secondary-white transition-colors duration-300 hover:text-primary-white"
-        >
-          Close
-        </button>
-      </div>
-
       <div className="grid min-h-0 flex-1 grid-cols-1 content-center items-stretch gap-12 md:grid-cols-12 md:gap-12">
         <nav
           data-menu="reveal"
@@ -278,10 +203,10 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
 
           <div className="flex items-stretch gap-5">
             <div
-              className="flex shrink-0 flex-col justify-center items-center gap-4 text-tertiary-white"
+              className="flex shrink-0 flex-col items-center justify-center gap-4 text-tertiary-white"
               aria-hidden
             >
-              <span className="w-px h-full bg-current" />
+              <span className="h-full w-px bg-current" />
               <span
                 className="small flex items-center"
                 style={{
@@ -291,7 +216,7 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
               >
                 Services
               </span>
-              <span className="w-px h-full bg-current" />
+              <span className="h-full w-px bg-current" />
             </div>
             <div className="flex flex-col gap-12">
               {serviceItems.map((item) => (
@@ -316,7 +241,7 @@ export default function SiteMenu({ open, onClose }: SiteMenuProps) {
 
         <div
           data-menu="reveal"
-          className="flex flex-col justify-between items-end md:col-span-3 md:col-start-8 md:h-full"
+          className="flex flex-col items-end justify-between md:col-span-3 md:col-start-8 md:h-full"
         >
           <p
             className={`small max-w-sm text-secondary-white transition-opacity duration-150 ${

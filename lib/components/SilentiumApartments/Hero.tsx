@@ -53,16 +53,16 @@ export default function Hero() {
       const playIntro = () => {
         gsap
           .timeline({ defaults: { ease: "power2.out" } })
-          .to(line1, { autoAlpha: 1, filter: "blur(0px)", duration: 1.1 })
+          .to(line1, { autoAlpha: 1, filter: "blur(0px)", duration: 0.55 })
           .to(
             line2,
-            { autoAlpha: 1, filter: "blur(0px)", duration: 1.05 },
-            "-=0.65",
+            { autoAlpha: 1, filter: "blur(0px)", duration: 0.5 },
+            "-=0.32",
           )
           .to(
             [copy, links],
-            { autoAlpha: 1, y: 0, duration: 0.65, stagger: 0.08 },
-            "-=0.55",
+            { autoAlpha: 1, y: 0, duration: 0.4, stagger: 0.05 },
+            "-=0.28",
           );
       };
 
@@ -181,16 +181,16 @@ export default function Hero() {
           >
             <span
               data-hero="line-1"
-              className="block opacity-0"
+              className=" opacity-0"
               style={{ filter: "blur(12px)" }}
             >
               <span className="text-secondary-white">
-                The only sound you&apos;ll hear is the
+                The only sound you'll hear is the one
               </span>
             </span>
             <span
               data-hero="line-2"
-              className="block opacity-0"
+              className="opacity-0"
               style={{ filter: "blur(12px)" }}
             >
               <span className="text-primary-white"> you choose</span>

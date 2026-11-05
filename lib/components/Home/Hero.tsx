@@ -102,24 +102,24 @@ export default function Hero() {
           .fromTo(
             line1,
             { autoAlpha: 0, filter: "blur(12px)" },
-            { autoAlpha: 1, filter: "blur(0px)", duration: 1.1 },
+            { autoAlpha: 1, filter: "blur(0px)", duration: 0.55 },
           )
           .fromTo(
             line2,
             { autoAlpha: 0, filter: "blur(12px)" },
-            { autoAlpha: 1, filter: "blur(0px)", duration: 1.05 },
-            "-=0.65",
+            { autoAlpha: 1, filter: "blur(0px)", duration: 0.5 },
+            "-=0.32",
           )
           .fromTo(
             [copy, links],
-            { autoAlpha: 0, y: 28 },
+            { autoAlpha: 0, y: 20 },
             {
               autoAlpha: 1,
               y: 0,
-              duration: 0.65,
-              stagger: 0.08,
+              duration: 0.4,
+              stagger: 0.05,
             },
-            "-=0.55",
+            "-=0.28",
           );
       };
 

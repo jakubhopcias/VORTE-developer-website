@@ -59,17 +59,23 @@ export default function Header() {
     };
   }, []);
 
+  const solidChrome = pastHero || menuOpen;
+
   return (
     <>
       <header
         data-header
-        className={`pointer-events-none relative sticky top-0 z-50 col-span-full row-start-1 mt-[calc(var(--app-vh,100svh)/2-var(--header-h,57px))] h-fit w-full self-start px-section ${
-          snapChrome ? "" : "transition-colors duration-300"
-        } ${pastHero ? "bg-[var(--color-black)]" : "bg-transparent"}`}
+        className={`pointer-events-none col-span-full row-start-1 h-fit w-full self-start px-section ${
+          menuOpen
+            ? "fixed inset-x-0 top-0 z-[90] mt-0 bg-[var(--color-black)]"
+            : `relative sticky top-0 z-50 mt-[calc(var(--app-vh,100svh)/2-var(--header-h,57px))] ${
+                snapChrome ? "" : "transition-colors duration-300"
+              } ${solidChrome ? "bg-[var(--color-black)]" : "bg-transparent"}`
+        }`}
       >
         <div
-          className={`pointer-events-auto relative flex h-[57px] w-full min-w-0 items-center justify-between gap-4 ${
-            pastHero ? "" : "mix-blend-difference"
+          className={`pointer-events-auto relative flex h-[57px] w-full min-w-0 items-center justify-between gap-4 text-primary-white ${
+            menuOpen || solidChrome ? "" : "mix-blend-difference"
           }`}
         >
           <Link
@@ -78,10 +84,7 @@ export default function Header() {
             aria-label="VORTE home"
             className="shrink-0 overflow-hidden text-primary-white"
           >
-            <div
-              data-header-logo-move
-              className="will-change-transform"
-            >
+            <div data-header-logo-move className="will-change-transform">
               <LogoMark className="h-[0.8125rem] w-auto" />
             </div>
             <span className="sr-only">VORTE</span>
@@ -89,20 +92,20 @@ export default function Header() {
           <button
             type="button"
             data-header-menu
-            onClick={() => setMenuOpen(true)}
-            className="group inline-flex items-center gap-2 duration-500"
-            aria-label="Menu"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="group inline-flex items-center gap-2 text-primary-white duration-300"
+            aria-label={menuOpen ? "Close menu" : "Menu"}
             aria-expanded={menuOpen}
           >
-            <span className="small">Menu</span>
-            <HamburgerMark className="h-2.5 w-auto" />
+            <span className="small">{menuOpen ? "Close" : "Menu"}</span>
+            {!menuOpen && <HamburgerMark className="h-2.5 w-auto" />}
           </button>
         </div>
         <div
           data-header-border
           className={`absolute inset-x-0 bottom-0 h-px origin-left bg-tertiary-white will-change-transform ${
-            snapChrome ? "" : "transition-opacity duration-300"
-          } ${pastHero ? "opacity-0" : "opacity-100"}`}
+            snapChrome || menuOpen ? "" : "transition-opacity duration-300"
+          } ${solidChrome || menuOpen ? "opacity-0" : "opacity-100"}`}
         />
       </header>
       <SiteMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
