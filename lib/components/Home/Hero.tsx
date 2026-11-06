@@ -150,7 +150,7 @@ export default function Hero() {
           className="absolute inset-0 scale-[1.2] will-change-transform"
         >
           <Image
-            src="/Silentium-building-reverse.jpg"
+            src="/front-building.jpg"
             alt="The Obsidian Penthouse building"
             fill
             priority
