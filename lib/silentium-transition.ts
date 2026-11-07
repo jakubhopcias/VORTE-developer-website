@@ -1,4 +1,4 @@
-export const SILENTIUM_IMAGE = "/Silentium-building-reverse.jpg";
+export const SILENTIUM_IMAGE = "/Silentium-building.jpg";
 export const SILENTIUM_HREF = "/silentium-apartments";
 export const SILENTIUM_ENTER_KEY = "vorte:silentium-enter";
 export const SILENTIUM_LAYER_ATTR = "data-silentium-transition";

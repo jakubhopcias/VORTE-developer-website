@@ -181,19 +181,18 @@ export default function Hero() {
           >
             <span
               data-hero="line-1"
-              className=" opacity-0"
+              className="text-primary-white opacity-0"
               style={{ filter: "blur(12px)" }}
             >
-              <span className="text-secondary-white">
-                The only sound you'll hear is the one
-              </span>
+              The only sound you'll hear is the one
             </span>
             <span
               data-hero="line-2"
-              className="opacity-0"
+              className="text-primary-white opacity-0"
               style={{ filter: "blur(12px)" }}
             >
-              <span className="text-primary-white"> you choose</span>
+              {" "}
+              you choose
             </span>
           </h1>
 

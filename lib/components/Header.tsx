@@ -81,13 +81,12 @@ export default function Header() {
           <Link
             href="/"
             data-header-logo
-            aria-label="VORTE home"
+            aria-label="Vørte home"
             className="shrink-0 overflow-hidden text-primary-white"
           >
             <div data-header-logo-move className="will-change-transform">
-              <LogoMark className="h-[0.8125rem] w-auto" />
+              <LogoMark />
             </div>
-            <span className="sr-only">VORTE</span>
           </Link>
           <button
             type="button"

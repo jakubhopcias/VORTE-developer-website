@@ -211,7 +211,7 @@ export default function IntroLoader() {
         <div className="w-[min(22rem,90vw)] text-primary-white">
           <div className="relative z-10 mx-auto w-fit overflow-hidden">
             <div data-intro="logo" className="will-change-transform">
-              <LogoMark className="h-auto w-[12rem]" />
+              <LogoMark className="text-[2.5rem]" />
             </div>
           </div>
           <div data-intro="meta" className="mt-3 flex items-center gap-4">

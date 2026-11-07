@@ -150,7 +150,7 @@ export default function Hero() {
           className="absolute inset-0 scale-[1.2] will-change-transform"
         >
           <Image
-            src="/front-building.jpg"
+            src="/private-door.jpg"
             alt="The Obsidian Penthouse building"
             fill
             priority
@@ -168,23 +168,19 @@ export default function Hero() {
           >
             <span
               data-hero="line-1"
-              className="block opacity-0"
+              className="block text-primary-white opacity-0"
               style={{ filter: "blur(12px)" }}
             >
-              <span className="text-secondary-white">We build for </span>
-              <span className="max-md:block md:inline lg:block text-primary-white">
-                the few.
-              </span>
+              We build for{" "}
+              <span className="max-md:block md:inline lg:block">the few.</span>
             </span>
             <span
               data-hero="line-2"
-              className="block opacity-0"
+              className="block text-primary-white opacity-0"
               style={{ filter: "blur(12px)" }}
             >
-              <span className="text-secondary-white">Hidden from </span>
-              <span className="max-md:block md:inline lg:block text-primary-white">
-                the world.
-              </span>
+              Hidden from{" "}
+              <span className="max-md:block md:inline lg:block">the world.</span>
             </span>
           </h1>
 
