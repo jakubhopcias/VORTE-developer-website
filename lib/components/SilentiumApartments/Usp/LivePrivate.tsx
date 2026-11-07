@@ -57,33 +57,56 @@ export default function LivePrivate() {
     const mm = gsap.matchMedia();
 
     mm.add("(min-width: 1024px)", () => {
-      const getAmount = () =>
-        Math.min(140, Math.max(72, window.innerWidth * 0.055));
+      const amount = Math.min(140, Math.max(72, window.innerWidth * 0.055));
 
-      const apply = (progress: number) => {
-        // 0 at edges, 1 when section center hits viewport center.
-        const spread = 1 - Math.abs(progress - 0.5) * 2;
-        const amount = getAmount() * (1 - spread);
-
-        items.forEach((el, i) => {
-          gsap.set(el, { x: compressX(i, amount), force3D: true });
+      items.forEach((el, i) => {
+        gsap.set(el, {
+          autoAlpha: 0,
+          x: compressX(i, amount),
+          force3D: true,
         });
-      };
-
-      const st = ScrollTrigger.create({
-        trigger: root,
-        start: "top bottom",
-        end: "bottom top",
-        scrub: 0.45,
-        onUpdate: (self) => apply(self.progress),
-        onRefresh: (self) => apply(self.progress),
       });
 
-      apply(st.progress);
+      const tween = gsap.to(items, {
+        autoAlpha: 1,
+        x: 0,
+        duration: 0.85,
+        stagger: 0.08,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: root,
+          start: "top 75%",
+          once: true,
+        },
+      });
 
       return () => {
-        st.kill();
-        gsap.set(items, { clearProps: "transform" });
+        tween.scrollTrigger?.kill();
+        tween.kill();
+        gsap.set(items, { clearProps: "transform,opacity,visibility" });
+      };
+    });
+
+    mm.add("(max-width: 1023px)", () => {
+      gsap.set(items, { autoAlpha: 0, y: 16 });
+
+      const tween = gsap.to(items, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.7,
+        stagger: 0.08,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: root,
+          start: "top 80%",
+          once: true,
+        },
+      });
+
+      return () => {
+        tween.scrollTrigger?.kill();
+        tween.kill();
+        gsap.set(items, { clearProps: "transform,opacity,visibility" });
       };
     });
 
@@ -93,7 +116,7 @@ export default function LivePrivate() {
   return (
     <section
       ref={rootRef}
-      className="flex h-fit flex-col gap-10 px-section py-section-y lg:gap-24 lg:py-section"
+      className="flex h-fit flex-col gap-10 px-section py-24 lg:gap-24 lg:py-40"
     >
       <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:items-end">
         <h2 className="headline text-primary-white lg:col-span-6">
@@ -109,7 +132,7 @@ export default function LivePrivate() {
 
       <div
         ref={trackRef}
-        className="grid h-fit grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-5 lg:gap-16"
+        className="grid h-fit grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-5 lg:gap-20"
       >
         {layers.map((layer) => (
           <div
@@ -117,12 +140,12 @@ export default function LivePrivate() {
             data-layer
             className="flex h-fit flex-col gap-4 will-change-transform"
           >
-            <div className="relative mx-auto aspect-square w-64">
+            <div className="relative mx-auto aspect-square w-72 sm:w-80">
               <Image
                 src={layer.src}
                 alt={layer.label}
                 fill
-                sizes="224px"
+                sizes="320px"
                 className="object-contain object-center"
               />
             </div>

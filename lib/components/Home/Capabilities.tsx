@@ -55,23 +55,10 @@ function emphasisedCopy(copy: string) {
   });
 }
 
-/** Viewport-heights per service switch while pinned. */
-const PIN_STEP_VH = 45;
-/** Extra hold after the last service before the pin releases. */
-const PIN_END_HOLD_VH = 40;
-
-function pinDistanceVh() {
-  return services.length * PIN_STEP_VH + PIN_END_HOLD_VH;
-}
-
 function indexFromProgress(progress: number) {
-  const serviceShare =
-    (services.length * PIN_STEP_VH) / pinDistanceVh();
-  const t = Math.min(1, progress / serviceShare);
-
   return Math.min(
     services.length - 1,
-    Math.floor(t * services.length),
+    Math.floor(progress * services.length),
   );
 }
 
@@ -181,59 +168,27 @@ export default function Capabilities() {
         if (hoverActiveRef.current === null) syncActive();
       };
 
-      const mm = gsap.matchMedia();
-
-      mm.add("(min-width: 1024px)", () => {
-        const pinRange = {
-          trigger: root,
-          start: "top top",
-          end: `+=${pinDistanceVh()}%`,
-          scrub: 0.65,
-        } as const;
-
-        ScrollTrigger.create({
-          ...pinRange,
-          pin: true,
-          anticipatePin: 1,
-          onUpdate: (self) => applyScrollIndex(self.progress),
-        });
-
-        gsap.fromTo(
-          media,
-          { yPercent: -5 },
-          {
-            yPercent: 7,
-            ease: "none",
-            scrollTrigger: pinRange,
+      gsap.fromTo(
+        media,
+        { yPercent: -6 },
+        {
+          yPercent: 6,
+          ease: "none",
+          scrollTrigger: {
+            trigger: root,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 0.45,
           },
-        );
+        },
+      );
+
+      ScrollTrigger.create({
+        trigger: root,
+        start: "top 70%",
+        end: "bottom 35%",
+        onUpdate: (self) => applyScrollIndex(self.progress),
       });
-
-      mm.add("(max-width: 1023px)", () => {
-        gsap.fromTo(
-          media,
-          { yPercent: -8 },
-          {
-            yPercent: 8,
-            ease: "none",
-            scrollTrigger: {
-              trigger: root,
-              start: "top bottom",
-              end: "bottom top",
-              scrub: 0.45,
-            },
-          },
-        );
-
-        ScrollTrigger.create({
-          trigger: root,
-          start: "top 70%",
-          end: "bottom 35%",
-          onUpdate: (self) => applyScrollIndex(self.progress),
-        });
-      });
-
-      return () => mm.revert();
     }, root);
 
     return () => ctx.revert();
@@ -243,9 +198,9 @@ export default function Capabilities() {
     <section
       ref={rootRef}
       id="services"
-      className="grid grid-cols-1 gap-12 px-section py-section-y lg:h-svh lg:min-h-0 lg:grid-cols-12 lg:gap-12 lg:overflow-hidden lg:p-section"
+      className="grid grid-cols-1 gap-12 px-section py-section-y lg:grid-cols-12 lg:items-stretch lg:gap-12 lg:py-section"
     >
-      <div className="flex flex-col justify-between gap-12 lg:col-span-5 lg:h-full lg:min-h-0 lg:py-section">
+      <div className="flex flex-col justify-between gap-12 lg:col-span-5">
         <div data-capabilities="intro" className="opacity-0">
           <h2 className="headline text-primary-white">Capabilities</h2>
           <p className="small mt-6 max-w-md text-secondary-white">
@@ -323,7 +278,7 @@ export default function Capabilities() {
 
       <Link
         href={current.href}
-        className="group/cta group relative flex h-[42svh] min-h-0 flex-col justify-end overflow-hidden rounded-xl p-6 lg:col-span-7 lg:col-start-6 lg:h-full lg:min-h-0 lg:p-section"
+        className="group/cta group relative flex h-[42svh] min-h-0 flex-col justify-end overflow-hidden rounded-xl p-6 lg:col-span-7 lg:col-start-6 lg:h-auto lg:min-h-[36rem] lg:p-section"
         onMouseEnter={cancelHoverClear}
         onMouseLeave={scheduleHoverClear}
       >

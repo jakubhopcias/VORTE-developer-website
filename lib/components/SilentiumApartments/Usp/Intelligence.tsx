@@ -9,6 +9,9 @@ gsap.registerPlugin(ScrollTrigger);
 
 const REVEAL_W = 340;
 const REVEAL_H = 240;
+/** Clip the x-ray window — never scale, or titles/copy inside would stretch. */
+const MASK_CLIP_OPEN = "inset(0% round 16px)";
+const MASK_CLIP_CLOSED = "inset(50% round 16px)";
 
 /** Design stage — callout % positions were tuned against this frame. */
 const DESIGN_W = 1440;
@@ -35,82 +38,89 @@ const features = [
   },
 ] as const;
 
-function Callouts({ tone }: { tone: "primary" | "pure" }) {
-  const interactive = tone === "primary";
-  const title = tone === "primary" ? "text-primary-white" : "text-[#fff]";
-  const copyColor = tone === "primary" ? "text-primary-white" : "text-[#fff]";
-  const dotBorder =
-    tone === "primary" ? "border-primary-white" : "border-[#fff]";
-  const dotFill =
-    tone === "primary" ? "group-hover/callout:bg-primary-white" : "bg-[#fff]";
+function Callouts({
+  tone,
+  activeParam,
+  onActiveParam,
+  copyAlways = false,
+}: {
+  tone: "primary" | "pure";
+  activeParam: number | null;
+  onActiveParam?: (index: number | null) => void;
+  /** Wireframe-on-top: white copy stays visible; photo copy still hover-gated. */
+  copyAlways?: boolean;
+}) {
+  const interactive = Boolean(onActiveParam);
+  const ink = tone === "primary" ? "text-primary-white" : "text-[#fff]";
+  const fillColor =
+    tone === "primary"
+      ? "border-primary-white bg-primary-white"
+      : "border-[#fff] bg-[#fff]";
+  const idleColor =
+    tone === "primary"
+      ? "border-primary-white bg-primary-white/0"
+      : "border-[#fff] bg-[#fff]/0";
+  const titleClass = `font-secondary text-[24px] leading-[1.2] transition-colors duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${ink}`;
+  const copyClassName = `small transition-[opacity,color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${ink}`;
 
-  const dot = (
-    <span
-      aria-hidden
-      className={`size-2.5 shrink-0 rounded-full border bg-transparent shadow-[0_0_8px_rgba(0,0,0,0.8)] transition-[background-color,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${dotBorder} ${dotFill} ${
-        tone === "primary" ? "group-hover/callout:scale-110" : "scale-110"
-      }`}
-    />
-  );
+  const bindParam = (index: number) =>
+    onActiveParam
+      ? {
+          onMouseEnter: () => onActiveParam(index),
+          onMouseLeave: () => onActiveParam(null),
+        }
+      : {};
 
-  const copyClass =
-    tone === "pure"
-      ? "opacity-100"
-      : "opacity-0 group-hover/callout:opacity-100";
+  const hint = (index: number) => {
+    const filled = activeParam === index;
+    return (
+      <span
+        aria-hidden
+        className={`size-2.5 shrink-0 rounded-full border shadow-[0_0_8px_rgba(0,0,0,0.8)] transition-[background-color,border-color,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          filled ? `${fillColor} scale-110` : `${idleColor} scale-100`
+        }`}
+      />
+    );
+  };
+
+  const copyClass = (index: number) =>
+    copyAlways || activeParam === index ? "opacity-100" : "opacity-0";
 
   return (
-    <div
-      className={`absolute inset-0 ${interactive ? "" : "pointer-events-none"}`}
-      aria-hidden={tone === "pure"}
-    >
+    <div className={`absolute inset-0 ${interactive ? "" : "pointer-events-none"}`}>
       <div
-        data-callout-item={tone === "primary" ? "" : undefined}
-        className={`group/callout absolute top-[7%] left-[33%] ${interactive ? "cursor-default" : ""}`}
+        data-callout-item={interactive ? "" : undefined}
+        className={`absolute top-[9%] left-[33%] ${interactive ? "cursor-default" : ""}`}
+        {...bindParam(0)}
       >
         <div className="grid grid-cols-[auto_15ch_16rem] items-center gap-x-8">
-          {dot}
-          <div className={`font-secondary text-[24px] leading-[1.2] ${title}`}>
-            {features[0].title}
-          </div>
-          <p
-            className={`small transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${copyColor} ${copyClass}`}
-          >
-            {features[0].copy}
-          </p>
+          {hint(0)}
+          <div className={titleClass}>{features[0].title}</div>
+          <p className={`${copyClassName} ${copyClass(0)}`}>{features[0].copy}</p>
         </div>
       </div>
 
       <div
-        data-callout-item={tone === "primary" ? "" : undefined}
-        className={`group/callout absolute bottom-[8%] left-[25%] ${interactive ? "cursor-default" : ""}`}
+        data-callout-item={interactive ? "" : undefined}
+        className={`absolute bottom-[8%] left-[25%] ${interactive ? "cursor-default" : ""}`}
+        {...bindParam(1)}
       >
         <div className="grid grid-cols-[12ch_auto_16rem] items-end gap-x-8">
-          <div className={`font-secondary text-[24px] leading-[1.2] ${title}`}>
-            {features[1].title}
-          </div>
-          <span className="mb-1.5 flex items-end">{dot}</span>
-          <p
-            className={`small transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${copyColor} ${copyClass}`}
-          >
-            {features[1].copy}
-          </p>
+          <div className={titleClass}>{features[1].title}</div>
+          <span className="mb-1.5 flex items-end">{hint(1)}</span>
+          <p className={`${copyClassName} ${copyClass(1)}`}>{features[1].copy}</p>
         </div>
       </div>
 
       <div
-        data-callout-item={tone === "primary" ? "" : undefined}
-        className={`group/callout absolute top-[50%] right-[29%] flex flex-col items-start gap-3 ${interactive ? "cursor-default" : ""}`}
+        data-callout-item={interactive ? "" : undefined}
+        className={`absolute top-[49%] right-[26%] flex flex-col items-start gap-3 ${interactive ? "cursor-default" : ""}`}
+        {...bindParam(2)}
       >
-        {dot}
+        {hint(2)}
         <div className="flex max-w-[200px] flex-col items-start gap-6">
-          <div className={`font-secondary text-[24px] leading-[1.2] ${title}`}>
-            {features[2].title}
-          </div>
-          <p
-            className={`small transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${copyColor} ${copyClass}`}
-          >
-            {features[2].copy}
-          </p>
+          <div className={titleClass}>{features[2].title}</div>
+          <p className={`${copyClassName} ${copyClass(2)}`}>{features[2].copy}</p>
         </div>
       </div>
     </div>
@@ -204,14 +214,62 @@ function MobileTiles() {
   );
 }
 
+function FrameHint({
+  tone,
+  hovered,
+  wireOnTop,
+}: {
+  tone: "primary" | "pure";
+  hovered: boolean;
+  wireOnTop: boolean;
+}) {
+  const color = tone === "primary" ? "text-primary-white" : "text-[#fff]";
+  const idle = wireOnTop ? "Click to return" : "Hover to reveal the layer";
+  const active = wireOnTop ? "Click to return" : "Click to switch";
+  const showActive = hovered && !wireOnTop;
+
+  return (
+    <p
+      aria-hidden={tone === "pure"}
+      aria-live={tone === "primary" ? "polite" : undefined}
+      className={`small pointer-events-none absolute right-6 bottom-6 grid text-right ${color}`}
+    >
+      <span
+        className={`col-start-1 row-start-1 transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          showActive ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        {idle}
+      </span>
+      <span
+        className={`col-start-1 row-start-1 transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          showActive ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        {active}
+      </span>
+    </p>
+  );
+}
+
 function DesktopReveal() {
   const frameRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const maskRef = useRef<HTMLDivElement>(null);
   const maskScaleRef = useRef<HTMLDivElement>(null);
   const maskInnerRef = useRef<HTMLDivElement>(null);
-  const hintRef = useRef<HTMLParagraphElement>(null);
+  const wireLayerRef = useRef<HTMLDivElement>(null);
+  const flashRef = useRef<HTMLDivElement>(null);
+  const switchTlRef = useRef<gsap.core.Timeline | null>(null);
   const scaleRef = useRef(1);
+  const pointerRef = useRef({ x: 0, y: 0, over: false });
+  const rafRef = useRef(0);
+  const switchingRef = useRef(false);
+  const [activeParam, setActiveParam] = useState<number | null>(null);
+  const [frameHovered, setFrameHovered] = useState(false);
+  const [wireOnTop, setWireOnTop] = useState(false);
+  const wireOnTopRef = useRef(false);
+  wireOnTopRef.current = wireOnTop;
 
   const placeMask = useCallback((x: number, y: number) => {
     const mask = maskRef.current;
@@ -227,23 +285,47 @@ function DesktopReveal() {
     const shell = maskScaleRef.current;
     if (!shell) return;
     gsap.to(shell, {
-      scale: on ? 1 : 0,
+      clipPath: on ? MASK_CLIP_OPEN : MASK_CLIP_CLOSED,
       duration: 0.45,
       ease: "power2.out",
       overwrite: true,
     });
   }, []);
 
-  const setHint = useCallback((on: boolean) => {
-    const hint = hintRef.current;
-    if (!hint) return;
-    hint.classList.toggle("translate-y-1", on);
-    hint.classList.toggle("text-primary-white", on);
-    hint.classList.toggle("opacity-0", on);
-    hint.classList.toggle("translate-y-0", !on);
-    hint.classList.toggle("text-secondary-white", !on);
-    hint.classList.toggle("opacity-100", !on);
+  const syncFromPointer = useCallback(() => {
+    const frame = frameRef.current;
+    const pointer = pointerRef.current;
+    if (!frame || !pointer.over || wireOnTopRef.current) return;
+
+    const rect = frame.getBoundingClientRect();
+    const { x, y } = pointer;
+
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      pointer.over = false;
+      setFrameHovered(false);
+      setMaskOpen(false);
+      return;
+    }
+
+    const s = scaleRef.current || 1;
+    placeMask((x - rect.left) / s, (y - rect.top) / s);
+  }, [placeMask, setMaskOpen]);
+
+  const stopLoop = useCallback(() => {
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = 0;
   }, []);
+
+  const startLoop = useCallback(() => {
+    stopLoop();
+    const tick = () => {
+      syncFromPointer();
+      if (pointerRef.current.over && !wireOnTopRef.current) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }, [stopLoop, syncFromPointer]);
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -258,6 +340,12 @@ function DesktopReveal() {
     ro.observe(frame);
 
     return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    gsap.set(wireLayerRef.current, { opacity: 0, scale: 1 });
+    gsap.set(flashRef.current, { opacity: 0 });
+    gsap.set(maskScaleRef.current, { clipPath: MASK_CLIP_CLOSED });
   }, []);
 
   useEffect(() => {
@@ -288,42 +376,137 @@ function DesktopReveal() {
     };
   }, []);
 
-  const onMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const el = frameRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const s = scaleRef.current || 1;
-      placeMask((e.clientX - rect.left) / s, (e.clientY - rect.top) / s);
+  useEffect(
+    () => () => {
+      stopLoop();
+      switchTlRef.current?.kill();
     },
-    [placeMask],
+    [stopLoop],
   );
+
+  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    pointerRef.current.x = e.clientX;
+    pointerRef.current.y = e.clientY;
+  }, []);
 
   const onEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      setHint(true);
+      pointerRef.current = { x: e.clientX, y: e.clientY, over: true };
+      setFrameHovered(true);
+      if (wireOnTopRef.current || switchingRef.current) return;
       setMaskOpen(true);
-      onMove(e);
+      startLoop();
     },
-    [onMove, setHint, setMaskOpen],
+    [setMaskOpen, startLoop],
   );
 
-  const onLeave = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      setHint(false);
-      setMaskOpen(false);
-      onMove(e);
-    },
-    [onMove, setHint, setMaskOpen],
-  );
+  const onLeave = useCallback(() => {
+    pointerRef.current.over = false;
+    stopLoop();
+    setFrameHovered(false);
+    setMaskOpen(false);
+    setActiveParam(null);
+  }, [setMaskOpen, stopLoop]);
+
+  const onClick = useCallback(() => {
+    if (switchingRef.current) return;
+
+    const wireLayer = wireLayerRef.current;
+    const flash = flashRef.current;
+    const shell = maskScaleRef.current;
+    if (!wireLayer || !flash) return;
+
+    setActiveParam(null);
+    switchTlRef.current?.kill();
+    switchingRef.current = true;
+
+    if (!wireOnTopRef.current) {
+      stopLoop();
+      wireOnTopRef.current = true;
+      setWireOnTop(true);
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          if (shell) gsap.set(shell, { clipPath: MASK_CLIP_CLOSED });
+          gsap.set(flash, { opacity: 0 });
+          gsap.set(wireLayer, { opacity: 1, scale: 1 });
+          switchingRef.current = false;
+        },
+      });
+      switchTlRef.current = tl;
+
+      if (shell) {
+        tl.to(
+          shell,
+          { clipPath: MASK_CLIP_CLOSED, duration: 0.28, ease: "power2.in" },
+          0,
+        );
+      }
+      tl.set(wireLayer, { opacity: 0, scale: 1.02 }, 0);
+      tl.to(
+        wireLayer,
+        { opacity: 1, scale: 1, duration: 0.55, ease: "power2.out" },
+        0.12,
+      );
+      tl.fromTo(
+        flash,
+        { opacity: 0 },
+        { opacity: 0.16, duration: 0.14, ease: "power1.out" },
+        0.18,
+      );
+      tl.to(flash, { opacity: 0, duration: 0.4, ease: "power2.out" }, 0.32);
+      return;
+    }
+
+    wireOnTopRef.current = false;
+    setWireOnTop(false);
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        gsap.set(wireLayer, { opacity: 0, scale: 1 });
+        gsap.set(flash, { opacity: 0 });
+        switchingRef.current = false;
+        if (pointerRef.current.over) {
+          setMaskOpen(true);
+          startLoop();
+        }
+      },
+    });
+    switchTlRef.current = tl;
+
+    tl.to(
+      wireLayer,
+      { opacity: 0, scale: 1.02, duration: 0.4, ease: "power2.inOut" },
+      0,
+    );
+    tl.fromTo(
+      flash,
+      { opacity: 0.1 },
+      { opacity: 0, duration: 0.35, ease: "power2.out" },
+      0,
+    );
+  }, [setMaskOpen, startLoop, stopLoop]);
 
   return (
     <div
       ref={frameRef}
+      role="button"
+      tabIndex={0}
+      aria-pressed={wireOnTop}
+      aria-label={
+        wireOnTop ? "Switch to photo layer" : "Switch to wireframe layer"
+      }
       onMouseEnter={onEnter}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
-      className="relative hidden w-full overflow-hidden rounded-xl lg:block"
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className="relative hidden w-full cursor-pointer overflow-hidden rounded-xl lg:block"
       style={{ aspectRatio: `${DESIGN_W} / ${DESIGN_H}` }}
     >
       <div
@@ -347,15 +530,22 @@ function DesktopReveal() {
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-black/8"
         />
-        <Callouts tone="primary" />
 
-        <p
-          ref={hintRef}
-          className="small pointer-events-none absolute right-6 bottom-6 translate-y-0 text-secondary-white opacity-100 transition-[opacity,transform,color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        >
-          Hover to reveal the layer
-        </p>
+        {/* Photo labels sit under the x-ray so the mask can show pure-white wire copy. */}
+        <div className={wireOnTop ? "pointer-events-none" : ""}>
+          <Callouts
+            tone="primary"
+            activeParam={activeParam}
+            onActiveParam={wireOnTop ? undefined : setActiveParam}
+          />
+          <FrameHint
+            tone="primary"
+            hovered={frameHovered}
+            wireOnTop={wireOnTop}
+          />
+        </div>
 
+        {/* X-ray: clip-path open/close — content stays 1:1, titles never stretch. */}
         <div
           ref={maskRef}
           aria-hidden
@@ -370,8 +560,8 @@ function DesktopReveal() {
         >
           <div
             ref={maskScaleRef}
-            className="relative h-full w-full origin-center overflow-hidden rounded-2xl"
-            style={{ transform: "scale(0)" }}
+            className="relative h-full w-full overflow-hidden rounded-2xl"
+            style={{ clipPath: MASK_CLIP_CLOSED }}
           >
             <div
               ref={maskInnerRef}
@@ -395,10 +585,54 @@ function DesktopReveal() {
                 aria-hidden
                 className="pointer-events-none absolute inset-0 bg-black/8"
               />
-              <Callouts tone="pure" />
+              <Callouts tone="pure" activeParam={activeParam} copyAlways />
+              <FrameHint
+                tone="pure"
+                hovered={frameHovered}
+                wireOnTop={false}
+              />
             </div>
           </div>
         </div>
+
+        <div
+          ref={wireLayerRef}
+          aria-hidden={!wireOnTop}
+          className={`absolute inset-0 origin-center ${
+            wireOnTop ? "" : "pointer-events-none"
+          }`}
+        >
+          <Image
+            src="/invisible-tech/invisible-tech.png"
+            alt=""
+            width={DESIGN_W}
+            height={DESIGN_H}
+            sizes="100vw"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-black/8"
+          />
+          <Callouts
+            tone="pure"
+            activeParam={activeParam}
+            onActiveParam={wireOnTop ? setActiveParam : undefined}
+            copyAlways
+          />
+          <FrameHint
+            tone="pure"
+            hovered={frameHovered}
+            wireOnTop={wireOnTop}
+          />
+        </div>
+
+        <div
+          ref={flashRef}
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[#fff]"
+          style={{ opacity: 0 }}
+        />
       </div>
     </div>
   );
