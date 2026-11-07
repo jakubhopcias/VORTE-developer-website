@@ -9,13 +9,61 @@ gsap.registerPlugin(ScrollTrigger);
 
 const REVEAL_W = 340;
 const REVEAL_H = 240;
-/** Clip the x-ray window — never scale, or titles/copy inside would stretch. */
-const MASK_CLIP_OPEN = "inset(0% round 16px)";
-const MASK_CLIP_CLOSED = "inset(50% round 16px)";
+const REVEAL_RADIUS = 16;
 
 /** Design stage — callout % positions were tuned against this frame. */
 const DESIGN_W = 1440;
 const DESIGN_H = Math.round((1440 * 1536) / 2752);
+
+type ClipInset = {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+  radius: number;
+};
+
+function clipCss(inset: ClipInset) {
+  return `inset(${inset.top}px ${inset.right}px ${inset.bottom}px ${inset.left}px round ${inset.radius}px)`;
+}
+
+function insetFull(): ClipInset {
+  return { top: 0, right: 0, bottom: 0, left: 0, radius: 0 };
+}
+
+/** Zero-size pin at a stage point (mask closed). */
+function insetPin(x: number, y: number): ClipInset {
+  return {
+    top: y,
+    right: DESIGN_W - x,
+    bottom: DESIGN_H - y,
+    left: x,
+    radius: REVEAL_RADIUS,
+  };
+}
+
+/** Rounded x-ray window centered on a stage point. */
+function insetWindow(x: number, y: number): ClipInset {
+  const halfW = REVEAL_W / 2;
+  const halfH = REVEAL_H / 2;
+  return {
+    top: Math.max(0, y - halfH),
+    right: Math.max(0, DESIGN_W - (x + halfW)),
+    bottom: Math.max(0, DESIGN_H - (y + halfH)),
+    left: Math.max(0, x - halfW),
+    radius: REVEAL_RADIUS,
+  };
+}
+
+function lerpInset(a: ClipInset, b: ClipInset, t: number): ClipInset {
+  return {
+    top: a.top + (b.top - a.top) * t,
+    right: a.right + (b.right - a.right) * t,
+    bottom: a.bottom + (b.bottom - a.bottom) * t,
+    left: a.left + (b.left - a.left) * t,
+    radius: a.radius + (b.radius - a.radius) * t,
+  };
+}
 
 const features = [
   {
@@ -224,29 +272,33 @@ function FrameHint({
   wireOnTop: boolean;
 }) {
   const color = tone === "primary" ? "text-primary-white" : "text-[#fff]";
-  const idle = wireOnTop ? "Click to return" : "Hover to reveal the layer";
-  const active = wireOnTop ? "Click to return" : "Click to switch";
-  const showActive = hovered && !wireOnTop;
+  const label = wireOnTop
+    ? "Click to see photo"
+    : hovered
+      ? "Click to see wireframe"
+      : "Hover to reveal the layer";
+  const [opaque, setOpaque] = useState(true);
+
+  useEffect(() => {
+    setOpaque(false);
+    const id = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => setOpaque(true));
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [label]);
 
   return (
     <p
       aria-hidden={tone === "pure"}
       aria-live={tone === "primary" ? "polite" : undefined}
-      className={`small pointer-events-none absolute right-6 bottom-6 grid text-right ${color}`}
+      className={`small pointer-events-none absolute right-6 bottom-6 text-right transition-colors duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${color}`}
     >
       <span
-        className={`col-start-1 row-start-1 transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          showActive ? "opacity-0" : "opacity-100"
+        className={`inline-block transition-opacity duration-200 ease-out ${
+          opaque ? "opacity-100" : "opacity-0"
         }`}
       >
-        {idle}
-      </span>
-      <span
-        className={`col-start-1 row-start-1 transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          showActive ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        {active}
+        {label}
       </span>
     </p>
   );
@@ -255,47 +307,69 @@ function FrameHint({
 function DesktopReveal() {
   const frameRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const maskRef = useRef<HTMLDivElement>(null);
-  const maskScaleRef = useRef<HTMLDivElement>(null);
-  const maskInnerRef = useRef<HTMLDivElement>(null);
-  const wireLayerRef = useRef<HTMLDivElement>(null);
-  const flashRef = useRef<HTMLDivElement>(null);
-  const switchTlRef = useRef<gsap.core.Timeline | null>(null);
+  const wireClipRef = useRef<HTMLDivElement>(null);
+  const switchTweenRef = useRef<gsap.core.Tween | null>(null);
+  const openTweenRef = useRef<gsap.core.Tween | null>(null);
   const scaleRef = useRef(1);
   const pointerRef = useRef({ x: 0, y: 0, over: false });
+  const lastStageRef = useRef({ x: DESIGN_W / 2, y: DESIGN_H / 2 });
   const rafRef = useRef(0);
   const switchingRef = useRef(false);
+  const insetRef = useRef<ClipInset>(insetPin(DESIGN_W / 2, DESIGN_H / 2));
   const [activeParam, setActiveParam] = useState<number | null>(null);
   const [frameHovered, setFrameHovered] = useState(false);
   const [wireOnTop, setWireOnTop] = useState(false);
   const wireOnTopRef = useRef(false);
   wireOnTopRef.current = wireOnTop;
 
-  const placeMask = useCallback((x: number, y: number) => {
-    const mask = maskRef.current;
-    const inner = maskInnerRef.current;
-    if (!mask || !inner) return;
-    mask.style.left = `${x}px`;
-    mask.style.top = `${y}px`;
-    inner.style.left = `${-(x - REVEAL_W / 2)}px`;
-    inner.style.top = `${-(y - REVEAL_H / 2)}px`;
+  const stagePointFromPointer = useCallback(() => {
+    const frame = frameRef.current;
+    if (!frame) return lastStageRef.current;
+    const rect = frame.getBoundingClientRect();
+    const s = scaleRef.current || 1;
+    const { x, y, over } = pointerRef.current;
+    if (!over) return lastStageRef.current;
+    const point = {
+      x: Math.min(DESIGN_W, Math.max(0, (x - rect.left) / s)),
+      y: Math.min(DESIGN_H, Math.max(0, (y - rect.top) / s)),
+    };
+    lastStageRef.current = point;
+    return point;
   }, []);
 
-  const setMaskOpen = useCallback((on: boolean) => {
-    const shell = maskScaleRef.current;
-    if (!shell) return;
-    gsap.to(shell, {
-      clipPath: on ? MASK_CLIP_OPEN : MASK_CLIP_CLOSED,
-      duration: 0.45,
-      ease: "power2.out",
-      overwrite: true,
-    });
+  const applyInset = useCallback((inset: ClipInset) => {
+    insetRef.current = inset;
+    const node = wireClipRef.current;
+    if (!node) return;
+    node.style.clipPath = clipCss(inset);
   }, []);
+
+  /** Shrink/grow the window in place at the last cursor point — never to stage center. */
+  const setMaskOpen = useCallback(
+    (on: boolean) => {
+      if (wireOnTopRef.current || switchingRef.current) return;
+      const { x, y } = lastStageRef.current;
+      const from = on ? insetPin(x, y) : insetRef.current;
+      const to = on ? insetWindow(x, y) : insetPin(x, y);
+      if (on) applyInset(from);
+      openTweenRef.current?.kill();
+      const progress = { t: 0 };
+      openTweenRef.current = gsap.to(progress, {
+        t: 1,
+        duration: 0.35,
+        ease: "power2.out",
+        onUpdate: () => applyInset(lerpInset(from, to, progress.t)),
+        onComplete: () => applyInset(to),
+      });
+    },
+    [applyInset],
+  );
 
   const syncFromPointer = useCallback(() => {
     const frame = frameRef.current;
     const pointer = pointerRef.current;
-    if (!frame || !pointer.over || wireOnTopRef.current) return;
+    if (!frame || !pointer.over || wireOnTopRef.current || switchingRef.current)
+      return;
 
     const rect = frame.getBoundingClientRect();
     const { x, y } = pointer;
@@ -308,8 +382,10 @@ function DesktopReveal() {
     }
 
     const s = scaleRef.current || 1;
-    placeMask((x - rect.left) / s, (y - rect.top) / s);
-  }, [placeMask, setMaskOpen]);
+    applyInset(
+      insetWindow((x - rect.left) / s, (y - rect.top) / s),
+    );
+  }, [applyInset, setMaskOpen]);
 
   const stopLoop = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
@@ -320,7 +396,11 @@ function DesktopReveal() {
     stopLoop();
     const tick = () => {
       syncFromPointer();
-      if (pointerRef.current.over && !wireOnTopRef.current) {
+      if (
+        pointerRef.current.over &&
+        !wireOnTopRef.current &&
+        !switchingRef.current
+      ) {
         rafRef.current = requestAnimationFrame(tick);
       }
     };
@@ -343,10 +423,8 @@ function DesktopReveal() {
   }, []);
 
   useEffect(() => {
-    gsap.set(wireLayerRef.current, { opacity: 0, scale: 1 });
-    gsap.set(flashRef.current, { opacity: 0 });
-    gsap.set(maskScaleRef.current, { clipPath: MASK_CLIP_CLOSED });
-  }, []);
+    applyInset(insetPin(DESIGN_W / 2, DESIGN_H / 2));
+  }, [applyInset]);
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -379,7 +457,8 @@ function DesktopReveal() {
   useEffect(
     () => () => {
       stopLoop();
-      switchTlRef.current?.kill();
+      switchTweenRef.current?.kill();
+      openTweenRef.current?.kill();
     },
     [stopLoop],
   );
@@ -392,32 +471,55 @@ function DesktopReveal() {
   const onEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       pointerRef.current = { x: e.clientX, y: e.clientY, over: true };
+      // Resolve stage point while over=true so lastStageRef is the entry cursor.
+      const { x, y } = stagePointFromPointer();
       setFrameHovered(true);
       if (wireOnTopRef.current || switchingRef.current) return;
-      setMaskOpen(true);
-      startLoop();
+
+      openTweenRef.current?.kill();
+      const from = insetPin(x, y);
+      applyInset(from);
+      const progress = { t: 0 };
+      openTweenRef.current = gsap.to(progress, {
+        t: 1,
+        duration: 0.35,
+        ease: "power2.out",
+        onUpdate: () => {
+          const live = stagePointFromPointer();
+          applyInset(
+            lerpInset(
+              insetPin(live.x, live.y),
+              insetWindow(live.x, live.y),
+              progress.t,
+            ),
+          );
+        },
+        onComplete: () => {
+          const p = stagePointFromPointer();
+          applyInset(insetWindow(p.x, p.y));
+          startLoop();
+        },
+      });
     },
-    [setMaskOpen, startLoop],
+    [applyInset, stagePointFromPointer, startLoop],
   );
 
   const onLeave = useCallback(() => {
+    // Keep lastStageRef — close the window where the cursor exited, not at center.
+    stagePointFromPointer();
     pointerRef.current.over = false;
     stopLoop();
     setFrameHovered(false);
-    setMaskOpen(false);
     setActiveParam(null);
-  }, [setMaskOpen, stopLoop]);
+    if (!wireOnTopRef.current) setMaskOpen(false);
+  }, [setMaskOpen, stagePointFromPointer, stopLoop]);
 
   const onClick = useCallback(() => {
     if (switchingRef.current) return;
 
-    const wireLayer = wireLayerRef.current;
-    const flash = flashRef.current;
-    const shell = maskScaleRef.current;
-    if (!wireLayer || !flash) return;
-
     setActiveParam(null);
-    switchTlRef.current?.kill();
+    switchTweenRef.current?.kill();
+    openTweenRef.current?.kill();
     switchingRef.current = true;
 
     if (!wireOnTopRef.current) {
@@ -425,67 +527,51 @@ function DesktopReveal() {
       wireOnTopRef.current = true;
       setWireOnTop(true);
 
-      const tl = gsap.timeline({
+      const from = insetRef.current;
+      const to = insetFull();
+      const progress = { t: 0 };
+      switchTweenRef.current = gsap.to(progress, {
+        t: 1,
+        duration: 0.65,
+        ease: "power3.inOut",
+        onUpdate: () => applyInset(lerpInset(from, to, progress.t)),
         onComplete: () => {
-          if (shell) gsap.set(shell, { clipPath: MASK_CLIP_CLOSED });
-          gsap.set(flash, { opacity: 0 });
-          gsap.set(wireLayer, { opacity: 1, scale: 1 });
+          applyInset(to);
           switchingRef.current = false;
         },
       });
-      switchTlRef.current = tl;
-
-      if (shell) {
-        tl.to(
-          shell,
-          { clipPath: MASK_CLIP_CLOSED, duration: 0.28, ease: "power2.in" },
-          0,
-        );
-      }
-      tl.set(wireLayer, { opacity: 0, scale: 1.02 }, 0);
-      tl.to(
-        wireLayer,
-        { opacity: 1, scale: 1, duration: 0.55, ease: "power2.out" },
-        0.12,
-      );
-      tl.fromTo(
-        flash,
-        { opacity: 0 },
-        { opacity: 0.16, duration: 0.14, ease: "power1.out" },
-        0.18,
-      );
-      tl.to(flash, { opacity: 0, duration: 0.4, ease: "power2.out" }, 0.32);
       return;
     }
 
-    wireOnTopRef.current = false;
-    setWireOnTop(false);
-
-    const tl = gsap.timeline({
+    // Collapse toward the live cursor — keep wireOnTop until done so the
+    // hint doesn't flash "Hover to reveal" mid-animation.
+    const from = insetFull();
+    const progress = { t: 0 };
+    switchTweenRef.current = gsap.to(progress, {
+      t: 1,
+      duration: 0.65,
+      ease: "power3.inOut",
+      onUpdate: () => {
+        const { x, y } = stagePointFromPointer();
+        const to = pointerRef.current.over
+          ? insetWindow(x, y)
+          : insetPin(x, y);
+        applyInset(lerpInset(from, to, progress.t));
+      },
       onComplete: () => {
-        gsap.set(wireLayer, { opacity: 0, scale: 1 });
-        gsap.set(flash, { opacity: 0 });
+        wireOnTopRef.current = false;
+        setWireOnTop(false);
         switchingRef.current = false;
+        const { x, y } = stagePointFromPointer();
         if (pointerRef.current.over) {
-          setMaskOpen(true);
+          applyInset(insetWindow(x, y));
           startLoop();
+        } else {
+          applyInset(insetPin(x, y));
         }
       },
     });
-    switchTlRef.current = tl;
-
-    tl.to(
-      wireLayer,
-      { opacity: 0, scale: 1.02, duration: 0.4, ease: "power2.inOut" },
-      0,
-    );
-    tl.fromTo(
-      flash,
-      { opacity: 0.1 },
-      { opacity: 0, duration: 0.35, ease: "power2.out" },
-      0,
-    );
-  }, [setMaskOpen, startLoop, stopLoop]);
+  }, [applyInset, stagePointFromPointer, startLoop, stopLoop]);
 
   return (
     <div
@@ -494,7 +580,7 @@ function DesktopReveal() {
       tabIndex={0}
       aria-pressed={wireOnTop}
       aria-label={
-        wireOnTop ? "Switch to photo layer" : "Switch to wireframe layer"
+        wireOnTop ? "Click to see photo" : "Click to see wireframe"
       }
       onMouseEnter={onEnter}
       onMouseMove={onMove}
@@ -531,7 +617,6 @@ function DesktopReveal() {
           className="pointer-events-none absolute inset-0 bg-black/8"
         />
 
-        {/* Photo labels sit under the x-ray so the mask can show pure-white wire copy. */}
         <div className={wireOnTop ? "pointer-events-none" : ""}>
           <Callouts
             tone="primary"
@@ -545,62 +630,14 @@ function DesktopReveal() {
           />
         </div>
 
-        {/* X-ray: clip-path open/close — content stays 1:1, titles never stretch. */}
+        {/* Full-size wire — only clip-path moves, so the image never shifts. */}
         <div
-          ref={maskRef}
-          aria-hidden
-          className="pointer-events-none absolute"
-          style={{
-            width: REVEAL_W,
-            height: REVEAL_H,
-            left: 0,
-            top: 0,
-            transform: "translate(-50%, -50%)",
-          }}
-        >
-          <div
-            ref={maskScaleRef}
-            className="relative h-full w-full overflow-hidden rounded-2xl"
-            style={{ clipPath: MASK_CLIP_CLOSED }}
-          >
-            <div
-              ref={maskInnerRef}
-              className="absolute"
-              style={{
-                width: DESIGN_W,
-                height: DESIGN_H,
-                left: 0,
-                top: 0,
-              }}
-            >
-              <Image
-                src="/invisible-tech/invisible-tech.png"
-                alt=""
-                width={DESIGN_W}
-                height={DESIGN_H}
-                sizes="100vw"
-                className="absolute inset-0 h-full w-full object-cover object-center"
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 bg-black/8"
-              />
-              <Callouts tone="pure" activeParam={activeParam} copyAlways />
-              <FrameHint
-                tone="pure"
-                hovered={frameHovered}
-                wireOnTop={false}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div
-          ref={wireLayerRef}
+          ref={wireClipRef}
           aria-hidden={!wireOnTop}
-          className={`absolute inset-0 origin-center ${
+          className={`absolute inset-0 ${
             wireOnTop ? "" : "pointer-events-none"
           }`}
+          style={{ clipPath: clipCss(insetPin(DESIGN_W / 2, DESIGN_H / 2)) }}
         >
           <Image
             src="/invisible-tech/invisible-tech.png"
@@ -626,13 +663,6 @@ function DesktopReveal() {
             wireOnTop={wireOnTop}
           />
         </div>
-
-        <div
-          ref={flashRef}
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[#fff]"
-          style={{ opacity: 0 }}
-        />
       </div>
     </div>
   );

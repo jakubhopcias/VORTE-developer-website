@@ -57,7 +57,7 @@ export default function LivePrivate() {
     const mm = gsap.matchMedia();
 
     mm.add("(min-width: 1024px)", () => {
-      const amount = Math.min(140, Math.max(72, window.innerWidth * 0.055));
+      const amount = Math.min(96, Math.max(48, window.innerWidth * 0.04));
 
       items.forEach((el, i) => {
         gsap.set(el, {
@@ -116,7 +116,7 @@ export default function LivePrivate() {
   return (
     <section
       ref={rootRef}
-      className="flex h-fit flex-col gap-10 px-section py-24 lg:gap-24 lg:py-40"
+      className="flex w-full max-w-full flex-col gap-10 overflow-x-clip px-section py-24 lg:gap-24 lg:py-40"
     >
       <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:items-end">
         <h2 className="headline text-primary-white lg:col-span-6">
@@ -130,35 +130,46 @@ export default function LivePrivate() {
         </p>
       </div>
 
-      <div
-        ref={trackRef}
-        className="grid h-fit grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-5 lg:gap-20"
-      >
-        {layers.map((layer) => (
-          <div
-            key={layer.n}
-            data-layer
-            className="flex h-fit flex-col gap-4 will-change-transform"
-          >
-            <div className="relative mx-auto aspect-square w-72 sm:w-80">
-              <Image
-                src={layer.src}
-                alt={layer.label}
-                fill
-                sizes="320px"
-                className="object-contain object-center"
-              />
+      <div className="flex w-full min-w-0 flex-col gap-8">
+        <div
+          ref={trackRef}
+          className="flex w-full min-w-0 items-end justify-center lg:grid lg:grid-cols-5 lg:items-start lg:gap-8 xl:gap-12"
+        >
+          {layers.map((layer, index) => (
+            <div
+              key={layer.n}
+              data-layer
+              className="relative flex min-w-0 flex-col gap-4 will-change-transform max-lg:-ml-[12%] max-lg:w-[26%] max-lg:max-w-28 max-lg:shrink-0 max-lg:first:ml-0 lg:ml-0 lg:w-auto lg:max-w-none"
+              style={{ zIndex: layers.length - index }}
+            >
+              <div className="relative mx-auto aspect-square w-full">
+                <Image
+                  src={layer.src}
+                  alt={layer.label}
+                  fill
+                  sizes="(max-width: 1023px) 26vw, 18vw"
+                  className="object-contain object-center"
+                />
+              </div>
+              <div className="hidden min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 lg:grid">
+                <span className="small text-primary-white">{layer.n}</span>
+                <span className="small text-secondary-white">{layer.label}</span>
+              </div>
             </div>
-            <div className="grid shrink-0 grid-cols-3 items-start gap-6">
-              <span className="small col-span-1 text-end text-primary-white">
-                {layer.n}
-              </span>
-              <span className="small col-span-2 text-secondary-white">
-                {layer.label}
-              </span>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        <ul className="flex w-full min-w-0 flex-col gap-4 lg:hidden">
+          {layers.map((layer) => (
+            <li
+              key={layer.n}
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 border-b border-tertiary-white/15 pb-4 last:border-b-0 last:pb-0"
+            >
+              <span className="small text-primary-white">{layer.n}</span>
+              <span className="small text-secondary-white">{layer.label}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
