@@ -329,8 +329,7 @@ export default function Silentium() {
 
       <div className="contents lg:flex lg:h-full lg:w-1/2 lg:min-h-0 lg:flex-col lg:justify-between lg:gap-12 lg:py-section">
         <div data-silentium="intro" className="order-1 shrink-0 opacity-0">
-          <p className="eyebrow">Silentium apartments</p>
-          <h2 className="headline mt-6">
+          <h2 className="headline">
             <span className="text-secondary-white">An enclave of </span>
             <span className="text-primary-white">total silence </span>
             <span className="text-secondary-white">

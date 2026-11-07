@@ -58,8 +58,7 @@ function ApartmentSection({
     >
       <div className="flex flex-col gap-12">
         <div>
-          <p className="eyebrow">{apartment.name}</p>
-          <h2 className="headline mt-6 text-primary-white">
+          <h2 className="headline text-primary-white">
             {apartment.headline.map((line: string) => (
               <span key={line} className="block">
                 {line}

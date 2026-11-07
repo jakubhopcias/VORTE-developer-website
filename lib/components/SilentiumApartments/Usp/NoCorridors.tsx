@@ -4,8 +4,7 @@ export default function NoCorridors() {
   return (
     <section className="grid h-svh grid-cols-1 gap-10 px-section py-section-y lg:grid-cols-12 lg:gap-8 lg:py-section">
       <div className="flex min-h-0 flex-col lg:col-span-6">
-        <p className="eyebrow shrink-0">No corridors</p>
-        <h2 className="headline mt-6 shrink-0 text-primary-white">
+        <h2 className="headline shrink-0 text-primary-white">
           Zero wasted space.{" "}
           <span className="text-secondary-white">Pure flow.</span>
         </h2>
