@@ -3,7 +3,7 @@
 @theme static {
   --color-primary-white: #e4e3c3;
   --color-secondary-white: #98977f;
-  --color-tertiary-white: #71705B;
+  --color-tertiary-white: #71705b;
   --color-black: #181914;
 
   /* Section inset — px-section / py-section-y / p-section / etc.
@@ -138,7 +138,8 @@
 }
 
 @utility btn-outline {
-  border: 1px solid color-mix(in oklab, var(--color-primary-white) 70%, transparent);
+  border: 1px solid
+    color-mix(in oklab, var(--color-primary-white) 70%, transparent);
   color: var(--color-primary-white);
   transition: border-color 150ms;
 
@@ -150,12 +151,11 @@
 @utility btn-ghost {
   color: var(--color-primary-white);
   transition: opacity 150ms;
-  padding-left:0 !important;
-  padding-right:0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
   &:hover {
     opacity: 0.8;
   }
-  
 }
 
 @utility btn-group {
@@ -167,8 +167,8 @@
 
   @media (width >= 80rem) {
     padding: 0.75rem;
-    border: 1px solid color-mix(in oklab, var(--color-secondary-white) 50%, transparent);
+    border: 1px solid
+      color-mix(in oklab, var(--color-secondary-white) 50%, transparent);
     border-radius: 0.75rem;
-   
   }
 }
