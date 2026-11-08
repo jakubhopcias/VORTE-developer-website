@@ -6,6 +6,11 @@ type SharedProps = {
   className?: string;
   /** Show a trailing arrow that appears on group hover */
   arrow?: boolean;
+  /**
+   * Rest underline sits on this edge, then sweeps across on hover.
+   * Default `right` (current site-wide behaviour).
+   */
+  from?: "left" | "right";
 };
 
 type AnchorProps = SharedProps &
@@ -24,14 +29,33 @@ type SpanProps = SharedProps & {
   href?: never;
 };
 
-function UnderlineTrack() {
+function UnderlineTrack({ from = "right" }: { from?: "left" | "right" }) {
+  const fromLeft = from === "left";
+
   return (
     <span className="mt-1 block h-px w-full overflow-clip" aria-hidden="true">
-      <span className="flex h-full w-[calc(200%+12px)] gap-3 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:-translate-x-[calc(50%+6px)]">
-        <span className="flex h-full flex-1 justify-end">
-          <span className="h-full w-[65%] bg-current" />
-        </span>
-        <span className="h-full flex-1 bg-current" />
+      <span
+        className={`flex h-full w-[calc(200%+12px)] gap-3 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
+          fromLeft
+            ? "-translate-x-[calc(50%+6px)] group-hover:translate-x-0"
+            : "translate-x-0 group-hover:-translate-x-[calc(50%+6px)]"
+        }`}
+      >
+        {fromLeft ? (
+          <>
+            <span className="h-full flex-1 bg-current" />
+            <span className="flex h-full flex-1 justify-start">
+              <span className="h-full w-[65%] bg-current" />
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="flex h-full flex-1 justify-end">
+              <span className="h-full w-[65%] bg-current" />
+            </span>
+            <span className="h-full flex-1 bg-current" />
+          </>
+        )}
       </span>
     </span>
   );
@@ -62,11 +86,11 @@ function Label({
 export default function LinkUnderline(
   props: AnchorProps | NextLinkProps | SpanProps,
 ) {
-  const { children, className = "", arrow } = props;
+  const { children, className = "", arrow, from = "right" } = props;
   const content = (
     <>
       <Label arrow={arrow}>{children}</Label>
-      <UnderlineTrack />
+      <UnderlineTrack from={from} />
     </>
   );
 
@@ -89,8 +113,14 @@ export default function LinkUnderline(
     );
   }
 
-  const { as: _as, arrow: _arrow, className: _c, children: _ch, ...anchorProps } =
-    props as AnchorProps;
+  const {
+    as: _as,
+    arrow: _arrow,
+    from: _from,
+    className: _c,
+    children: _ch,
+    ...anchorProps
+  } = props as AnchorProps;
 
   return (
     <a {...anchorProps} href={props.href} className={classes}>

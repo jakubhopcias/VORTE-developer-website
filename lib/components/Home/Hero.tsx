@@ -202,16 +202,9 @@ export default function Hero() {
             >
               <LinkUnderline
                 href="#services"
-                className="small text-secondary-white"
-              >
-                I need custom service
-              </LinkUnderline>
-              <LinkUnderline
-                as="link"
-                href="silentium-apartments"
                 className="small text-primary-white"
               >
-                See apartments
+                I need custom service
               </LinkUnderline>
             </div>
           </div>

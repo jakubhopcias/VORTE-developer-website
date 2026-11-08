@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LogoMark from "@/lib/components/LogoMark";
-import HamburgerMark from "@/lib/components/HamburgerMark";
-import SiteMenu from "@/lib/components/SiteMenu";
 import { onIntroComplete } from "@/lib/intro";
 import { HEADER_OVER_HERO_EVENT } from "@/lib/silentium-transition";
 import { getViewportHeight, syncViewportVars } from "@/lib/viewport";
@@ -14,12 +13,21 @@ import { getViewportHeight, syncViewportVars } from "@/lib/viewport";
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [pastHero, setPastHero] = useState(false);
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+  const [pastHero, setPastHero] = useState(!isHome);
   const [snapChrome, setSnapChrome] = useState(false);
 
   useEffect(() => {
     syncViewportVars();
+
+    if (!isHome) {
+      setPastHero(true);
+      setSnapChrome(false);
+      return;
+    }
+
+    setPastHero(false);
 
     const onResize = () => syncViewportVars();
     const onOverHero = () => {
@@ -57,57 +65,59 @@ export default function Header() {
       unsubscribeIntro();
       st.kill();
     };
-  }, []);
+  }, [isHome]);
 
-  const solidChrome = pastHero || menuOpen;
+  const solidChrome = isHome ? pastHero : true;
 
   return (
-    <>
-      <header
-        data-header
-        className={`pointer-events-none col-span-full row-start-1 h-fit w-full self-start px-section ${
-          menuOpen
-            ? "fixed inset-x-0 top-0 z-[90] mt-0 bg-[var(--color-black)]"
-            : `relative sticky top-0 z-50 mt-[calc(var(--app-vh,100svh)/2-var(--header-h,57px))] ${
-                snapChrome ? "" : "transition-colors duration-300"
-              } ${solidChrome ? "bg-[var(--color-black)]" : "bg-transparent"}`
+    <header
+      data-header
+      className={`pointer-events-none col-span-full row-start-1 h-fit w-full self-start px-section relative sticky top-0 z-50 ${
+        isHome
+          ? "mt-[calc(var(--app-vh,100svh)/2-var(--header-h,57px))]"
+          : ""
+      } ${snapChrome ? "" : "transition-colors duration-300"} ${
+        solidChrome ? "bg-[var(--color-black)]" : "bg-transparent"
+      }`}
+    >
+      <div
+        className={`pointer-events-auto relative flex h-[57px] w-full min-w-0 items-center justify-between gap-6 text-primary-white ${
+          solidChrome ? "" : "mix-blend-difference"
         }`}
       >
-        <div
-          className={`pointer-events-auto relative flex h-[57px] w-full min-w-0 items-center justify-between gap-4 text-primary-white ${
-            menuOpen || solidChrome ? "" : "mix-blend-difference"
-          }`}
+        <Link
+          href="/"
+          data-header-logo
+          aria-label="Vørte home"
+          className="shrink-0 overflow-hidden text-primary-white"
+        >
+          <div data-header-logo-move className="will-change-transform">
+            <LogoMark />
+          </div>
+        </Link>
+
+        <nav
+          data-header-nav
+          aria-label="Primary"
+          className="flex shrink-0 items-center gap-6 sm:gap-8"
         >
           <Link
-            href="/"
-            data-header-logo
-            aria-label="Vørte home"
-            className="shrink-0 overflow-hidden text-primary-white"
+            href="/silentium-apartments"
+            className="small text-primary-white"
           >
-            <div data-header-logo-move className="will-change-transform">
-              <LogoMark />
-            </div>
+            Silentium residences
           </Link>
-          <button
-            type="button"
-            data-header-menu
-            onClick={() => setMenuOpen((open) => !open)}
-            className="group inline-flex items-center gap-2 text-primary-white duration-300"
-            aria-label={menuOpen ? "Close menu" : "Menu"}
-            aria-expanded={menuOpen}
-          >
-            <span className="small">{menuOpen ? "Close" : "Menu"}</span>
-            {!menuOpen && <HamburgerMark className="h-2.5 w-auto" />}
-          </button>
-        </div>
-        <div
-          data-header-border
-          className={`absolute inset-x-0 bottom-0 h-px origin-left bg-tertiary-white will-change-transform ${
-            snapChrome || menuOpen ? "" : "transition-opacity duration-300"
-          } ${solidChrome || menuOpen ? "opacity-0" : "opacity-100"}`}
-        />
-      </header>
-      <SiteMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-    </>
+          <a href="/#footer" className="small text-primary-white">
+            Enquiry
+          </a>
+        </nav>
+      </div>
+      <div
+        data-header-border
+        className={`absolute inset-x-0 bottom-0 h-px origin-left bg-primary-white will-change-transform ${
+          snapChrome ? "" : "transition-opacity duration-300"
+        } ${solidChrome ? "opacity-0" : "opacity-100"}`}
+      />
+    </header>
   );
 }

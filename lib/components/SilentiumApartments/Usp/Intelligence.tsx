@@ -670,7 +670,7 @@ function DesktopReveal() {
 
 export default function Intelligence() {
   return (
-    <section className="flex flex-col gap-10 px-section py-section-y lg:gap-8 lg:py-section">
+    <section className="flex flex-col gap-10 px-section pt-6 pb-section-y lg:gap-8 lg:pt-8 lg:pb-section">
       <div className="flex flex-col gap-8 md:grid md:grid-cols-12 md:items-end md:gap-8">
         <h2 className="headline text-primary-white md:col-span-6">
           Technology you can only feel

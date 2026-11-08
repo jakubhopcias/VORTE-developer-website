@@ -3,9 +3,6 @@ export const SILENTIUM_HREF = "/silentium-apartments";
 export const SILENTIUM_ENTER_KEY = "vorte:silentium-enter";
 export const SILENTIUM_LAYER_ATTR = "data-silentium-transition";
 
-/** Hero parallax rest scale — clone must end here to avoid a handoff jump. */
-export const SILENTIUM_HERO_SCALE = 1.2;
-
 export function markSilentiumEnter() {
   try {
     sessionStorage.setItem(SILENTIUM_ENTER_KEY, "1");

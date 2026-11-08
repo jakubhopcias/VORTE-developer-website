@@ -44,7 +44,7 @@ export default function IntroLoader() {
     const meta = root.querySelector<HTMLElement>("[data-intro='meta']");
     const header = document.querySelector<HTMLElement>("[data-header]");
     const headerLogo = document.querySelector<HTMLElement>("[data-header-logo]");
-    const headerMenu = document.querySelector<HTMLElement>("[data-header-menu]");
+    const headerNav = document.querySelector<HTMLElement>("[data-header-nav]");
     const headerBorder = document.querySelector<HTMLElement>(
       "[data-header-border]",
     );
@@ -62,7 +62,7 @@ export default function IntroLoader() {
     syncViewportVars(header);
 
     gsap.set(header, { autoAlpha: 0 });
-    gsap.set([headerLogo, headerMenu], { autoAlpha: 0 });
+    gsap.set([headerLogo, headerNav].filter(Boolean), { autoAlpha: 0 });
     gsap.set(bar, { scaleX: 0, transformOrigin: "left center" });
     if (headerBorder) {
       gsap.set(headerBorder, { scaleX: 0, transformOrigin: "left center" });
@@ -115,12 +115,12 @@ export default function IntroLoader() {
           if (cancelled) return;
           gsap.set(logo, { autoAlpha: 0 });
           gsap.set(headerLogoMove, { clearProps: "transform" });
-          gsap.to(headerMenu, {
+          gsap.to(headerNav, {
             autoAlpha: 1,
             duration: 0.45,
             ease: "power2.out",
             onComplete: () => {
-              gsap.set([header, headerLogo, headerMenu], {
+              gsap.set([header, headerLogo, headerNav].filter(Boolean), {
                 clearProps: "opacity,visibility",
               });
             },
