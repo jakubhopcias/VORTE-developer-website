@@ -45,6 +45,39 @@
 }
 
 /*
+ * Autofill wash cover + hook for JS. Multi-word text color is fixed in Footer
+ * by exiting :-webkit-autofill (Chrome paints 2nd+ words black while autofilled).
+ */
+@keyframes vorte-autofill-text {
+  to {
+    color: #e4e3c3;
+    caret-color: #e4e3c3;
+    background-color: #181914;
+    -webkit-box-shadow: 0 0 0 1000px #181914 inset;
+    box-shadow: 0 0 0 1000px #181914 inset;
+  }
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active {
+  color: #e4e3c3 !important;
+  caret-color: #e4e3c3 !important;
+  background-color: #181914 !important;
+  background-image: none !important;
+  border-color: rgba(228, 227, 195, 0.5) !important;
+  -webkit-box-shadow: 0 0 0 1000px #181914 inset !important;
+  box-shadow: 0 0 0 1000px #181914 inset !important;
+  transition: background-color 99999s ease-out 0s !important;
+  animation: vorte-autofill-text 0.001s forwards;
+}
+
+/*
  * Fluid type from 23.4375rem (375px) to 90rem (1440px).
  * Desktop targets: display 6rem, headline 4rem, title 3rem,
  * subtitle 2rem, subheading 1.5rem.
