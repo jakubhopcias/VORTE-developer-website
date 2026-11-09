@@ -1,12 +1,44 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
 import LinkUnderline from "@/lib/components/LinkUnderline";
 import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 import type { Apartment, ApartmentImage } from "./apartments";
+
+type OpenOrigin = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  scale: number;
+};
+
+const THUMB_HOVER_SCALE = 1.04;
+const THUMB_HOVER_EASE = "power3.out";
+const THUMB_HOVER_DURATION = 0.7;
+
+function readElementScale(el: HTMLElement | null): number {
+  if (!el) return 1;
+  const fromGsap = Number(gsap.getProperty(el, "scale"));
+  if (Number.isFinite(fromGsap) && fromGsap > 0) return fromGsap;
+  try {
+    const t = getComputedStyle(el).transform;
+    if (!t || t === "none") return 1;
+    const scale = new DOMMatrix(t).a;
+    return Number.isFinite(scale) && scale > 0 ? scale : 1;
+  } catch {
+    return 1;
+  }
+}
 
 /**
  * 1 = next (≡ right / →): old exits up, new from below.
@@ -214,10 +246,16 @@ export default function ApartmentSection({
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const mediaRef = useRef<HTMLButtonElement>(null);
+  const mediaZoomRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const stageMediaRef = useRef<HTMLDivElement>(null);
   const gradientRef = useRef<HTMLDivElement>(null);
+  const washRef = useRef<HTMLDivElement>(null);
   const lightboxMetaMoveRef = useRef<HTMLDivElement>(null);
   const lightboxCloseMoveRef = useRef<HTMLButtonElement>(null);
+  const thumbHoveredRef = useRef(false);
+  const thumbScaleRef = useRef(1);
+  const openOriginRef = useRef<OpenOrigin | null>(null);
   const current = images[active] ?? images[0];
 
   const advance = () => {
@@ -228,21 +266,74 @@ export default function ApartmentSection({
     setActive((i) => (i - 1 + images.length) % images.length);
   };
 
+  const setThumbScale = (scale: number, duration = THUMB_HOVER_DURATION) => {
+    const zoom = mediaZoomRef.current;
+    if (!zoom) return;
+    thumbScaleRef.current = scale;
+    gsap.killTweensOf(zoom);
+    gsap.to(zoom, {
+      scale,
+      duration,
+      ease: THUMB_HOVER_EASE,
+      transformOrigin: "center center",
+      onUpdate: () => {
+        thumbScaleRef.current = Number(gsap.getProperty(zoom, "scale")) || scale;
+      },
+    });
+  };
+
+  const freezeThumbScale = () => {
+    const zoom = mediaZoomRef.current;
+    const media = mediaRef.current;
+    if (!media) return null;
+    let scale = readElementScale(zoom);
+    if (thumbHoveredRef.current) {
+      scale = Math.max(scale, thumbScaleRef.current, THUMB_HOVER_SCALE);
+    }
+    if (!Number.isFinite(scale) || scale <= 0) scale = 1;
+    if (zoom) {
+      gsap.killTweensOf(zoom);
+      gsap.set(zoom, { scale, transformOrigin: "center center" });
+      thumbScaleRef.current = scale;
+    }
+    const rect = media.getBoundingClientRect();
+    return {
+      top: rect.top,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height,
+      scale,
+    } satisfies OpenOrigin;
+  };
+
   const openLightbox = () => {
     if (lightbox || images.length === 0) return;
+    openOriginRef.current = openOriginRef.current ?? freezeThumbScale();
+    if (!openOriginRef.current) return;
+    lockScroll();
     setLightbox(true);
   };
 
   const closeLightbox = () => {
     const stage = stageRef.current;
+    const stageMedia = stageMediaRef.current;
     const media = mediaRef.current;
+    const zoom = mediaZoomRef.current;
     const gradient = gradientRef.current;
+    const wash = washRef.current;
     const chromeMove = lightboxMetaMoveRef.current;
     const closeMove = lightboxCloseMoveRef.current;
+    const endScale = thumbHoveredRef.current ? THUMB_HOVER_SCALE : 1;
+    const target = media?.getBoundingClientRect();
 
     const tl = gsap.timeline({
       defaults: { ease: "power2.in" },
       onComplete: () => {
+        if (zoom) {
+          gsap.set(zoom, { scale: endScale, transformOrigin: "center center" });
+          thumbScaleRef.current = endScale;
+        }
+        openOriginRef.current = null;
         setLightbox(false);
         unlockScroll();
       },
@@ -254,75 +345,100 @@ export default function ApartmentSection({
     if (closeMove) {
       tl.to(closeMove, { yPercent: -130, duration: 0.35 }, 0);
     }
+    if (wash) {
+      tl.to(wash, { yPercent: -100, duration: 0.4 }, 0);
+    }
     if (gradient) {
       tl.to(gradient, { yPercent: 100, duration: 0.45 }, 0.05);
     }
 
-    if (stage && media) {
-      const rect = media.getBoundingClientRect();
+    if (stage && target) {
       tl.to(
         stage,
         {
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
+          top: target.top,
+          left: target.left,
+          width: target.width,
+          height: target.height,
           borderRadius: 24,
           duration: 0.7,
           ease: "power3.inOut",
         },
         0.12,
       );
+      if (stageMedia) {
+        tl.to(
+          stageMedia,
+          { scale: endScale, duration: 0.7, ease: "power3.inOut" },
+          0.12,
+        );
+      }
     } else if (stage) {
       tl.to(stage, { autoAlpha: 0, duration: 0.35 }, 0.1);
     }
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!lightbox) return;
 
-    lockScroll();
     const stage = stageRef.current;
-    const media = mediaRef.current;
+    const stageMedia = stageMediaRef.current;
     const gradient = gradientRef.current;
+    const wash = washRef.current;
     const chromeMove = lightboxMetaMoveRef.current;
     const closeMove = lightboxCloseMoveRef.current;
+    const origin = openOriginRef.current;
 
     const tl = gsap.timeline({ defaults: { ease: "power3.inOut" } });
 
     if (chromeMove) gsap.set(chromeMove, { yPercent: -130 });
     if (closeMove) gsap.set(closeMove, { yPercent: -130 });
+    if (wash) gsap.set(wash, { yPercent: -100 });
     if (gradient) gsap.set(gradient, { yPercent: 100 });
 
-    if (stage && media) {
-      const rect = media.getBoundingClientRect();
-      tl.fromTo(
+    if (stage && origin) {
+      gsap.set(stage, {
+        top: origin.top,
+        left: origin.left,
+        width: origin.width,
+        height: origin.height,
+        borderRadius: 24,
+      });
+    }
+    if (stageMedia && origin) {
+      gsap.set(stageMedia, {
+        scale: origin.scale,
+        transformOrigin: "center center",
+      });
+    }
+
+    // Portal is on document.body — true viewport fixed, clears sticky header.
+    if (stage && origin) {
+      tl.to(
         stage,
-        {
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
-          borderRadius: 24,
-        },
         {
           top: 0,
           left: 0,
-          width: "100%",
-          height: "100%",
+          width: window.innerWidth,
+          height: window.innerHeight,
           borderRadius: 0,
           duration: 0.75,
         },
         0,
       );
     }
+    if (stageMedia && origin) {
+      tl.to(
+        stageMedia,
+        { scale: 1, duration: 0.75, ease: "power3.inOut" },
+        0,
+      );
+    }
 
-    // Gradient rises from the bottom as the frame opens.
     if (gradient) {
       tl.to(gradient, { yPercent: 0, duration: 0.65, ease: "power2.out" }, 0.2);
     }
 
-    // Texts + nav enter from top after expand settles.
     if (chromeMove) {
       tl.to(
         chromeMove,
@@ -336,6 +452,9 @@ export default function ApartmentSection({
         { yPercent: 0, duration: 0.5, ease: "power2.out" },
         "<0.06",
       );
+    }
+    if (wash) {
+      tl.to(wash, { yPercent: 0, duration: 0.5, ease: "power2.out" }, "<");
     }
 
     const onKey = (event: KeyboardEvent) => {
@@ -355,6 +474,7 @@ export default function ApartmentSection({
       window.removeEventListener("keydown", onKey);
       tl.kill();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightbox, images.length]);
 
   if (!current) return null;
@@ -366,30 +486,49 @@ export default function ApartmentSection({
           imageOnLeft ? "order-2 lg:order-1" : "order-2 lg:order-2"
         }`}
       >
-        <button
-          ref={mediaRef}
-          type="button"
-          onClick={openLightbox}
-          aria-label={`Open ${apartment.name} gallery`}
-          className="group relative aspect-[4/5] min-h-0 cursor-zoom-in overflow-hidden rounded-3xl lg:aspect-auto lg:flex-1"
-        >
-          <div className="absolute inset-0 scale-100 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]">
-            {images.map((image, index) => (
-              <Image
-                key={image.src}
-                src={image.src}
-                alt={image.alt}
-                fill
-                quality={95}
-                sizes="(max-width: 1024px) 100vw, min(58vw, 1400px)"
-                className={`object-cover transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                  index === active ? "opacity-100" : "opacity-0"
-                }`}
-                priority={index === 0}
-              />
-            ))}
-          </div>
-        </button>
+        <div className="relative aspect-[4/5] min-h-0 w-full lg:aspect-auto lg:flex-1">
+          <button
+            ref={mediaRef}
+            type="button"
+            onPointerEnter={() => {
+              thumbHoveredRef.current = true;
+              if (!lightbox) setThumbScale(THUMB_HOVER_SCALE);
+            }}
+            onPointerLeave={() => {
+              thumbHoveredRef.current = false;
+              if (!lightbox) setThumbScale(1);
+            }}
+            onPointerDown={(event) => {
+              if (event.button !== 0 || lightbox) return;
+              openOriginRef.current = freezeThumbScale();
+            }}
+            onClick={openLightbox}
+            aria-label={`Open ${apartment.name} gallery`}
+            className={`absolute inset-0 cursor-zoom-in overflow-hidden rounded-3xl bg-black ${
+              lightbox ? "invisible" : ""
+            }`}
+          >
+            <div
+              ref={mediaZoomRef}
+              className="absolute inset-0 will-change-transform"
+            >
+              {images.map((image, index) => (
+                <Image
+                  key={image.src}
+                  src={image.src}
+                  alt={image.alt}
+                  fill
+                  quality={95}
+                  sizes="(max-width: 1024px) 100vw, min(58vw, 1400px)"
+                  className={`object-cover transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    index === active ? "opacity-100" : "opacity-0"
+                  }`}
+                  priority={index === 0}
+                />
+              ))}
+            </div>
+          </button>
+        </div>
         <GalleryMeta images={images} active={active} onSelect={setActive} />
       </div>
 
@@ -449,43 +588,71 @@ export default function ApartmentSection({
       {lightbox && typeof document !== "undefined"
         ? createPortal(
             <div
-              ref={stageRef}
               role="dialog"
               aria-modal="true"
               aria-label={`${apartment.name} gallery`}
-              className="fixed inset-0 z-[999] h-[100svh] w-screen overflow-hidden bg-black"
+              className="pointer-events-none fixed inset-0 z-[1000]"
             >
-              <div className="absolute inset-0">
-                {images.map((image, index) => (
-                  <Image
-                    key={`full-${image.src}`}
-                    src={image.src}
-                    alt={image.alt}
-                    fill
-                    quality={95}
-                    sizes="100vw"
-                    className={`object-cover transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                      index === active ? "opacity-100" : "opacity-0"
-                    }`}
-                    priority
-                  />
-                ))}
+              {/* Stage lives on body so fixed = real viewport (escapes layout isolate). */}
+              <div
+                ref={(el) => {
+                  stageRef.current = el;
+                  if (el && openOriginRef.current && el.dataset.origin !== "1") {
+                    const o = openOriginRef.current;
+                    el.style.top = `${o.top}px`;
+                    el.style.left = `${o.left}px`;
+                    el.style.width = `${o.width}px`;
+                    el.style.height = `${o.height}px`;
+                    el.style.borderRadius = "24px";
+                    el.dataset.origin = "1";
+                  }
+                }}
+                className="pointer-events-auto fixed overflow-hidden bg-black"
+              >
+                <div
+                  ref={(el) => {
+                    stageMediaRef.current = el;
+                    if (el && openOriginRef.current && el.dataset.origin !== "1") {
+                      const s = openOriginRef.current.scale;
+                      el.style.transform = `scale(${s})`;
+                      el.style.transformOrigin = "center center";
+                      el.dataset.origin = "1";
+                    }
+                  }}
+                  className="absolute inset-0 will-change-transform"
+                >
+                  {images.map((image, index) => (
+                    <Image
+                      key={`full-${image.src}`}
+                      src={image.src}
+                      alt={image.alt}
+                      fill
+                      quality={95}
+                      sizes="(max-width: 1024px) 100vw, min(58vw, 1400px)"
+                      className={`object-cover transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                        index === active ? "opacity-100" : "opacity-0"
+                      }`}
+                      priority
+                    />
+                  ))}
+                </div>
               </div>
+
               {/* Invisible hit zones — left prev, right next. No chrome. */}
               <button
                 type="button"
                 aria-label="Previous image"
                 onClick={retreat}
-                className="absolute inset-y-0 left-0 w-1/2 cursor-default"
+                className="pointer-events-auto absolute inset-y-0 left-0 z-10 w-1/2 cursor-default"
               />
               <button
                 type="button"
                 aria-label="Next image"
                 onClick={advance}
-                className="absolute inset-y-0 right-0 w-1/2 cursor-default"
+                className="pointer-events-auto absolute inset-y-0 right-0 z-10 w-1/2 cursor-default"
               />
 
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[40%] overflow-hidden">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[40%] overflow-hidden">
                 <div
                   ref={gradientRef}
                   className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent will-change-transform"
@@ -493,26 +660,29 @@ export default function ApartmentSection({
               </div>
 
               {/* Top-right wash so Close stays readable over bright photos. */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute top-0 right-0 h-40 w-56 bg-[radial-gradient(ellipse_at_top_right,rgba(0,0,0,0.72)_0%,transparent_70%)]"
-              />
+              <div className="pointer-events-none absolute top-0 right-0 z-10 h-40 w-56 overflow-hidden">
+                <div
+                  ref={washRef}
+                  aria-hidden
+                  className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,0,0,0.72)_0%,transparent_70%)] will-change-transform"
+                />
+              </div>
 
-              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-end px-section pt-6">
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end px-section pt-6">
                 {/* Tight clip box = button height only, so the slide-in stays hidden. */}
                 <div className="overflow-hidden">
                   <button
                     ref={lightboxCloseMoveRef}
                     type="button"
                     onClick={closeLightbox}
-                    className="pointer-events-auto block font-secondary text-[16px] leading-[1.35] will-change-transform text-primary-white"
+                    className="pointer-events-auto block font-secondary text-[16px] leading-[1.35] text-primary-white will-change-transform"
                   >
                     Close
                   </button>
                 </div>
               </div>
 
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-section pb-section-y pt-16">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-section pt-16 pb-section-y">
                 <div className="pointer-events-auto">
                   <GalleryMeta
                     images={images}

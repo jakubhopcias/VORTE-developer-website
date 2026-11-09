@@ -7,7 +7,10 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LogoMark from "@/lib/components/LogoMark";
 import { onIntroComplete } from "@/lib/intro";
-import { HEADER_OVER_HERO_EVENT } from "@/lib/silentium-transition";
+import {
+  HEADER_OVER_HERO_EVENT,
+  SILENTIUM_HREF,
+} from "@/lib/silentium-transition";
 import { getViewportHeight, syncViewportVars } from "@/lib/viewport";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -15,6 +18,7 @@ gsap.registerPlugin(ScrollTrigger);
 export default function Header() {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const onSilentium = pathname === SILENTIUM_HREF;
   const [pastHero, setPastHero] = useState(!isHome);
   const [snapChrome, setSnapChrome] = useState(false);
 
@@ -101,12 +105,11 @@ export default function Header() {
           aria-label="Primary"
           className="flex shrink-0 items-center gap-6 sm:gap-8"
         >
-          <Link
-            href="/silentium-apartments"
-            className="small text-primary-white"
-          >
-            Silentium residences
-          </Link>
+          {!onSilentium ? (
+            <Link href={SILENTIUM_HREF} className="small text-primary-white">
+              Silentium residences
+            </Link>
+          ) : null}
           <a href="/#footer" className="small text-primary-white">
             Enquiry
           </a>
