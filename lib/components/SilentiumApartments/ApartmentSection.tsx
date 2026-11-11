@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LinkUnderline from "@/lib/components/LinkUnderline";
 import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 import type { Apartment, ApartmentImage } from "./apartments";
@@ -25,6 +26,13 @@ type OpenOrigin = {
 const THUMB_HOVER_SCALE = 1.04;
 const THUMB_HOVER_EASE = "power3.out";
 const THUMB_HOVER_DURATION = 0.7;
+
+const ENTRANCE_SCALE = 1.06;
+/** Long enough for the edge to travel a nearly full-screen frame. */
+const ENTRANCE_DURATION = 1.3;
+const ENTRANCE_EASE = "power2.inOut";
+
+gsap.registerPlugin(ScrollTrigger);
 
 function readElementScale(el: HTMLElement | null): number {
   if (!el) return 1;
@@ -245,6 +253,15 @@ export default function ApartmentSection({
 }) {
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [mediaReady, setMediaReady] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const revealRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const summaryRef = useRef<HTMLParagraphElement>(null);
+  const specsRef = useRef<HTMLDivElement>(null);
+  const metaRef = useRef<HTMLDivElement>(null);
+  const entranceDoneRef = useRef(false);
+  const afterEntranceRef = useRef<() => void>(() => {});
   const mediaRef = useRef<HTMLButtonElement>(null);
   const mediaZoomRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -280,6 +297,12 @@ export default function ApartmentSection({
         thumbScaleRef.current = Number(gsap.getProperty(zoom, "scale")) || scale;
       },
     });
+  };
+
+  afterEntranceRef.current = () => {
+    entranceDoneRef.current = true;
+    setMediaReady(true);
+    if (thumbHoveredRef.current) setThumbScale(THUMB_HOVER_SCALE);
   };
 
   const freezeThumbScale = () => {
@@ -477,10 +500,74 @@ export default function ApartmentSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightbox, images.length]);
 
+  useLayoutEffect(() => {
+    const section = sectionRef.current;
+    const reveal = revealRef.current;
+    const zoom = mediaZoomRef.current;
+    const title = titleRef.current;
+    const summary = summaryRef.current;
+    const specs = specsRef.current;
+    const meta = metaRef.current;
+    if (!section || !reveal || !zoom || !title || !summary || !specs || !meta) {
+      return;
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      entranceDoneRef.current = true;
+      setMediaReady(true);
+      return;
+    }
+
+    const wipe = { bottom: 100 };
+    reveal.style.clipPath = "inset(0 0 100% 0)";
+    gsap.set(zoom, { scale: ENTRANCE_SCALE, transformOrigin: "center center" });
+    gsap.set([title, summary], { yPercent: 130 });
+    gsap.set([specs, meta], { autoAlpha: 0 });
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: "top 72%",
+        once: true,
+      },
+      onComplete: () => afterEntranceRef.current(),
+    });
+
+    tl.to(
+      wipe,
+      {
+        bottom: 0,
+        duration: ENTRANCE_DURATION,
+        ease: ENTRANCE_EASE,
+        onUpdate: () => {
+          reveal.style.clipPath = `inset(0 0 ${wipe.bottom}% 0)`;
+        },
+        onComplete: () => {
+          reveal.style.removeProperty("clip-path");
+        },
+      },
+      0,
+    );
+    tl.to(zoom, { scale: 1, duration: ENTRANCE_DURATION, ease: ENTRANCE_EASE }, 0);
+    tl.to(title, { yPercent: 0, duration: 0.55, ease: "power2.out" }, 0.68);
+    tl.to(summary, { yPercent: 0, duration: 0.5, ease: "power2.out" }, 0.76);
+    tl.to(meta, { autoAlpha: 1, duration: 0.45, ease: "power2.out" }, 0.82);
+    tl.to(specs, { autoAlpha: 1, duration: 0.45, ease: "power2.out" }, 0.84);
+
+    return () => {
+      tl.scrollTrigger?.kill();
+      tl.kill();
+      reveal.style.removeProperty("clip-path");
+    };
+  }, []);
+
   if (!current) return null;
 
   return (
-    <section className="grid grid-cols-1 gap-10 px-section py-section-y lg:min-h-svh lg:grid-cols-12 lg:gap-x-8 lg:py-section">
+    <section
+      ref={sectionRef}
+      className="grid grid-cols-1 gap-10 px-section py-section-y lg:min-h-svh lg:grid-cols-12 lg:gap-x-8 lg:py-section"
+    >
       <div
         className={`flex min-h-0 flex-col gap-6 lg:col-span-7 ${
           imageOnLeft ? "order-2 lg:order-1" : "order-2 lg:order-2"
@@ -492,11 +579,11 @@ export default function ApartmentSection({
             type="button"
             onPointerEnter={() => {
               thumbHoveredRef.current = true;
-              if (!lightbox) setThumbScale(THUMB_HOVER_SCALE);
+              if (!lightbox && entranceDoneRef.current) setThumbScale(THUMB_HOVER_SCALE);
             }}
             onPointerLeave={() => {
               thumbHoveredRef.current = false;
-              if (!lightbox) setThumbScale(1);
+              if (!lightbox && entranceDoneRef.current) setThumbScale(1);
             }}
             onPointerDown={(event) => {
               if (event.button !== 0 || lightbox) return;
@@ -506,12 +593,13 @@ export default function ApartmentSection({
             aria-label={`Open ${apartment.name} gallery`}
             className={`absolute inset-0 cursor-zoom-in overflow-hidden rounded-3xl bg-black ${
               lightbox ? "invisible" : ""
-            }`}
+            } ${mediaReady ? "" : "pointer-events-none"}`}
           >
-            <div
-              ref={mediaZoomRef}
-              className="absolute inset-0 will-change-transform"
-            >
+            <div ref={revealRef} className="absolute inset-0">
+              <div
+                ref={mediaZoomRef}
+                className="absolute inset-0 will-change-transform"
+              >
               {images.map((image, index) => (
                 <Image
                   key={image.src}
@@ -526,10 +614,13 @@ export default function ApartmentSection({
                   priority={index === 0}
                 />
               ))}
+              </div>
             </div>
           </button>
         </div>
-        <GalleryMeta images={images} active={active} onSelect={setActive} />
+        <div ref={metaRef}>
+          <GalleryMeta images={images} active={active} onSelect={setActive} />
+        </div>
       </div>
 
       <div
@@ -538,13 +629,19 @@ export default function ApartmentSection({
         }`}
       >
         <div className="flex flex-col gap-8">
-          <h2 className="headline text-primary-white">{apartment.name}</h2>
-          <p className="small max-w-md text-secondary-white">
-            {apartment.summary}
-          </p>
+          <div className="overflow-hidden py-[0.08em]">
+            <h2 ref={titleRef} className="headline text-primary-white">
+              {apartment.name}
+            </h2>
+          </div>
+          <div className="overflow-hidden">
+            <p ref={summaryRef} className="small max-w-md text-secondary-white">
+              {apartment.summary}
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-8">
+        <div ref={specsRef} className="flex flex-col gap-8">
           <ul className="flex w-full flex-col">
             {(
               [
