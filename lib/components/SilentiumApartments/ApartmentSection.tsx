@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LinkUnderline from "@/lib/components/LinkUnderline";
+import { restoreHeaderChrome, setHeaderChrome } from "@/lib/header-chrome";
 import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 import type { Apartment, ApartmentImage } from "./apartments";
 
@@ -31,6 +32,9 @@ const ENTRANCE_SCALE = 1.06;
 /** Long enough for the edge to travel a nearly full-screen frame. */
 const ENTRANCE_DURATION = 1.3;
 const ENTRANCE_EASE = "power2.inOut";
+
+/** One gallery handoff at a time — the header leaves before any portal exists. */
+let galleryHandoff = false;
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -254,6 +258,11 @@ export default function ApartmentSection({
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [mediaReady, setMediaReady] = useState(false);
+  const openingRef = useRef(false);
+  const headerHiddenRef = useRef(false);
+  const scrollLockedRef = useRef(false);
+  const handoffRef = useRef(false);
+  const returnHeaderRef = useRef(false);
   const sectionRef = useRef<HTMLElement>(null);
   const revealRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -329,12 +338,34 @@ export default function ApartmentSection({
     } satisfies OpenOrigin;
   };
 
+  const releaseHandoff = () => {
+    if (!handoffRef.current) return;
+    handoffRef.current = false;
+    galleryHandoff = false;
+  };
+
   const openLightbox = () => {
-    if (lightbox || images.length === 0) return;
+    if (lightbox || openingRef.current || galleryHandoff || images.length === 0) {
+      return;
+    }
     openOriginRef.current = openOriginRef.current ?? freezeThumbScale();
     if (!openOriginRef.current) return;
+    openingRef.current = true;
+    headerHiddenRef.current = true;
+    scrollLockedRef.current = true;
+    handoffRef.current = true;
+    galleryHandoff = true;
     lockScroll();
-    setLightbox(true);
+
+    const start = () => {
+      if (!openingRef.current) return;
+      openingRef.current = false;
+      setLightbox(true);
+    };
+
+    // Header slides out on its own. The portal mounts only after that,
+    // so the photo never crosses a still-visible bar.
+    void setHeaderChrome(true).then(start);
   };
 
   const closeLightbox = () => {
@@ -358,7 +389,16 @@ export default function ApartmentSection({
         }
         openOriginRef.current = null;
         setLightbox(false);
-        unlockScroll();
+        if (!headerHiddenRef.current) {
+          releaseHandoff();
+          if (scrollLockedRef.current) {
+            scrollLockedRef.current = false;
+            unlockScroll();
+          }
+          return;
+        }
+        // Portal unmounts first; the effect below then slides the header back in.
+        returnHeaderRef.current = true;
       },
     });
 
@@ -400,6 +440,39 @@ export default function ApartmentSection({
       tl.to(stage, { autoAlpha: 0, duration: 0.35 }, 0.1);
     }
   };
+
+  useEffect(() => {
+    if (lightbox || !returnHeaderRef.current) return;
+    returnHeaderRef.current = false;
+    let cancelled = false;
+    void setHeaderChrome(false).then(() => {
+      if (cancelled) return;
+      headerHiddenRef.current = false;
+      releaseHandoff();
+      if (scrollLockedRef.current) {
+        scrollLockedRef.current = false;
+        unlockScroll();
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [lightbox]);
+
+  useEffect(() => {
+    return () => {
+      openingRef.current = false;
+      releaseHandoff();
+      if (headerHiddenRef.current) {
+        headerHiddenRef.current = false;
+        restoreHeaderChrome();
+      }
+      if (scrollLockedRef.current) {
+        scrollLockedRef.current = false;
+        unlockScroll();
+      }
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (!lightbox) return;
@@ -579,14 +652,18 @@ export default function ApartmentSection({
             type="button"
             onPointerEnter={() => {
               thumbHoveredRef.current = true;
-              if (!lightbox && entranceDoneRef.current) setThumbScale(THUMB_HOVER_SCALE);
+              if (!lightbox && !openingRef.current && entranceDoneRef.current) {
+                setThumbScale(THUMB_HOVER_SCALE);
+              }
             }}
             onPointerLeave={() => {
               thumbHoveredRef.current = false;
-              if (!lightbox && entranceDoneRef.current) setThumbScale(1);
+              if (!lightbox && !openingRef.current && entranceDoneRef.current) {
+                setThumbScale(1);
+              }
             }}
             onPointerDown={(event) => {
-              if (event.button !== 0 || lightbox) return;
+              if (event.button !== 0 || lightbox || openingRef.current) return;
               openOriginRef.current = freezeThumbScale();
             }}
             onClick={openLightbox}
