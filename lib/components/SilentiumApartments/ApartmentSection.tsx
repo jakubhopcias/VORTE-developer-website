@@ -197,7 +197,7 @@ function GalleryMeta({
               </p>
             ))}
           </div>
-          <div className="relative col-span-3 min-h-[2.7em] lg:col-span-4">
+          <div className="relative col-span-3 min-h-[2.7em] lg:col-span-4 lg:col-start-3">
             {images.map((image, index) => (
               <p
                 key={`caption-${image.src}`}
