@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import gsap from "gsap";
+import LogoMark from "@/lib/components/LogoMark";
 import { unlockScroll } from "@/lib/scroll-lock";
 import {
   consumeSilentiumEnter,
@@ -9,43 +11,46 @@ import {
   removeSilentiumTransitionLayer,
 } from "@/lib/silentium-transition";
 
-/** Page label + reveal after Home → Silentium enter transition. */
+/** Way home and the place name. The entrance stagger lives below; this lifts the transition veil. */
 export default function PageTitle() {
   useEffect(() => {
     const fromEnter = consumeSilentiumEnter();
     const main = document.querySelector("main");
     const layer = getSilentiumTransitionLayer();
+    if (main) gsap.set(main, { clearProps: "opacity,visibility" });
+    unlockScroll();
 
-    if (fromEnter && main) {
-      gsap.set(main, { autoAlpha: 0 });
-      unlockScroll();
-
-      const tl = gsap.timeline({
-        defaults: { ease: "power2.out" },
-        onComplete: () => removeSilentiumTransitionLayer(),
-      });
-
-      if (layer) {
-        tl.to(layer, { autoAlpha: 0, duration: 0.35 }, 0);
-      }
-      tl.to(main, { autoAlpha: 1, duration: 0.55 }, layer ? 0.08 : 0);
-
-      return () => {
-        tl.kill();
-        removeSilentiumTransitionLayer();
-        gsap.set(main, { clearProps: "opacity,visibility" });
-      };
+    if (!fromEnter || !layer) {
+      removeSilentiumTransitionLayer();
+      return;
     }
 
-    removeSilentiumTransitionLayer();
-    unlockScroll();
+    const fade = gsap.to(layer, {
+      autoAlpha: 0,
+      duration: 0.35,
+      ease: "power2.out",
+      onComplete: () => removeSilentiumTransitionLayer(),
+    });
+
+    return () => {
+      fade.kill();
+      removeSilentiumTransitionLayer();
+    };
   }, []);
 
   return (
-    <div className="px-section pt-[calc(var(--header-h,57px)+1.5rem)]">
-      <p className="font-secondary text-[16px] leading-[1.35] text-secondary-white">
-        Silentium apartments
-      </p>
+    <div className="px-section pt-section">
+      <div
+        data-enter="label"
+        className="flex items-center gap-6 motion-safe:opacity-0"
+      >
+        <Link href="/" aria-label="Vørte home" className="text-primary-white">
+          <LogoMark />
+        </Link>
+        <p className="font-secondary text-[16px] leading-[1.35] text-secondary-white">
+          Silentium
+        </p>
+      </div>
     </div>
   );
 }

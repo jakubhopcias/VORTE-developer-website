@@ -35,10 +35,3 @@ export function getAppBlack() {
     .trim();
   return value || "#181914";
 }
-
-export const HEADER_OVER_HERO_EVENT = "vorte:header-over-hero";
-
-/** Force sticky header into top-of-hero chrome (no solid bg / border flash). */
-export function forceHeaderOverHero() {
-  window.dispatchEvent(new Event(HEADER_OVER_HERO_EVENT));
-}

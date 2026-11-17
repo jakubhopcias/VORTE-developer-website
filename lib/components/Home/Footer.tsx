@@ -373,7 +373,7 @@ export default function Footer() {
   return (
     <footer
       id="footer"
-      className="col-span-12 flex flex-col gap-16 px-section py-section-y md:gap-24 md:p-section lg:gap-32"
+      className="relative z-[60] flex h-svh flex-col justify-between gap-16 bg-black px-section py-section-y md:gap-24 md:p-section lg:gap-32"
     >
       <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:items-start">
         <h2

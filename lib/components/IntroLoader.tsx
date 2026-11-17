@@ -4,11 +4,15 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import LogoMark from "@/lib/components/LogoMark";
-import { emitIntroComplete, hasIntroCompleted } from "@/lib/intro";
+import {
+  emitIntroComplete,
+  emitIntroReveal,
+  hasIntroCompleted,
+} from "@/lib/intro";
 import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 import { syncViewportVars } from "@/lib/viewport";
 
-const HERO_IMAGE = "/Silentium-building-reverse.jpg";
+const HERO_IMAGE = "/private-door.jpg";
 
 export default function IntroLoader() {
   const pathname = usePathname();
@@ -36,37 +40,46 @@ export default function IntroLoader() {
     if (!root) return;
 
     const curtain = root.querySelector<HTMLElement>("[data-intro='curtain']");
-    const logo = root.querySelector<HTMLElement>("[data-intro='logo']");
+    const chrome = root.querySelector<HTMLElement>("[data-intro='chrome']");
     const bar = root.querySelector<HTMLElement>("[data-intro='bar']");
     const percentValue = root.querySelector<HTMLElement>(
       "[data-intro='percent-value']",
     );
-    const meta = root.querySelector<HTMLElement>("[data-intro='meta']");
+    const percent = root.querySelector<HTMLElement>("[data-intro='percent']");
     const header = document.querySelector<HTMLElement>("[data-header]");
     const headerLogo = document.querySelector<HTMLElement>("[data-header-logo]");
-    const headerNav = document.querySelector<HTMLElement>("[data-header-nav]");
-    const headerBorder = document.querySelector<HTMLElement>(
-      "[data-header-border]",
-    );
 
-    if (!curtain || !logo || !bar || !percentValue || !meta) return;
+    if (!curtain || !chrome || !bar || !percentValue || !percent) {
+      return;
+    }
 
     let cancelled = false;
     const progress = { value: 0 };
 
+    // Intro always opens at the top. Kill restore attempts while the curtain is up.
+    history.scrollRestoration = "manual";
+    const pinTop = () => window.scrollTo(0, 0);
+    pinTop();
+    window.addEventListener("scroll", pinTop);
+
     // scrollbar-gutter: stable already reserves space — don't add paddingRight
     // or the layout jumps when overflow is restored after the loader.
+    const previousHtmlOverflow = document.documentElement.style.overflow;
     const previousOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
     lockScroll();
     syncViewportVars(header);
 
+    const blockWheel = (event: WheelEvent | TouchEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("wheel", blockWheel, { passive: false });
+    window.addEventListener("touchmove", blockWheel, { passive: false });
+
     gsap.set(header, { autoAlpha: 0 });
-    gsap.set([headerLogo, headerNav].filter(Boolean), { autoAlpha: 0 });
+    gsap.set([headerLogo].filter(Boolean), { autoAlpha: 0 });
     gsap.set(bar, { scaleX: 0, transformOrigin: "left center" });
-    if (headerBorder) {
-      gsap.set(headerBorder, { scaleX: 0, transformOrigin: "left center" });
-    }
     percentValue.textContent = "0";
 
     const preload = new Promise<void>((resolve) => {
@@ -105,28 +118,21 @@ export default function IntroLoader() {
       await loadTl.then();
       if (cancelled) return;
 
-      const headerLogoMove = document.querySelector<HTMLElement>(
-        "[data-header-logo-move]",
-      );
-
       const exitTl = gsap.timeline({
         defaults: { ease: "power3.inOut" },
         onComplete: () => {
           if (cancelled) return;
-          gsap.set(logo, { autoAlpha: 0 });
-          gsap.set(headerLogoMove, { clearProps: "transform" });
-          gsap.to(headerNav, {
+          gsap.set([header, headerLogo].filter(Boolean), {
+            clearProps: "opacity,visibility",
             autoAlpha: 1,
-            duration: 0.45,
-            ease: "power2.out",
-            onComplete: () => {
-              gsap.set([header, headerLogo, headerNav].filter(Boolean), {
-                clearProps: "opacity,visibility",
-              });
-            },
           });
+          document.documentElement.style.overflow = previousHtmlOverflow;
           document.body.style.overflow = previousOverflow;
+          window.removeEventListener("wheel", blockWheel);
+          window.removeEventListener("touchmove", blockWheel);
           unlockScroll();
+          pinTop();
+          window.removeEventListener("scroll", pinTop);
           syncViewportVars(header);
           emitIntroComplete();
           setActive(false);
@@ -134,60 +140,29 @@ export default function IntroLoader() {
       });
 
       exitTl
-        .to(meta, { autoAlpha: 0, duration: 0.35 }, 0)
-        .set(header, { autoAlpha: 1 }, 0.12)
+        .to([percent, bar], { autoAlpha: 0, duration: 0.35 }, 0)
         .to(
           curtain,
           {
             yPercent: -100,
             duration: 1.15,
             ease: "power2.inOut",
+            onStart: () => {
+              if (!cancelled) emitIntroReveal();
+            },
           },
           0.12,
         );
-
-      if (headerBorder) {
-        exitTl.to(
-          headerBorder,
-          {
-            scaleX: 1,
-            duration: 0.95,
-            ease: "power2.inOut",
-          },
-          0.28,
-        );
-      }
-
-      // Clip-slide: loader logo exits down, header logo enters from top.
-      exitTl.to(
-        logo,
-        {
-          yPercent: 130,
-          duration: 0.55,
-          ease: "power2.in",
-        },
-        0.18,
-      );
-
-      if (headerLogo && headerLogoMove) {
-        gsap.set(headerLogo, { autoAlpha: 1 });
-        exitTl.fromTo(
-          headerLogoMove,
-          { yPercent: -130 },
-          {
-            yPercent: 0,
-            duration: 0.55,
-            ease: "power2.out",
-          },
-          0.52,
-        );
-      }
     };
 
     void run();
 
     return () => {
       cancelled = true;
+      window.removeEventListener("scroll", pinTop);
+      window.removeEventListener("wheel", blockWheel);
+      window.removeEventListener("touchmove", blockWheel);
+      document.documentElement.style.overflow = previousHtmlOverflow;
       document.body.style.overflow = previousOverflow;
       unlockScroll();
     };
@@ -207,32 +182,28 @@ export default function IntroLoader() {
         className="absolute inset-0 bg-black will-change-transform"
       />
 
-      <div className="absolute inset-0 flex items-center justify-center px-section">
-        <div className="w-[min(22rem,90vw)] text-primary-white">
-          <div className="relative z-10 mx-auto w-fit overflow-hidden">
-            <div data-intro="logo" className="will-change-transform">
-              <LogoMark className="text-[2.5rem]" />
-            </div>
+      {/* Same band as the home header — logo lands where it stays. */}
+      <div
+        data-intro="chrome"
+        className="absolute inset-x-0 top-[calc(var(--app-vh,100svh)/2-var(--header-h,57px))] px-section"
+      >
+        <div className="relative flex h-[57px] w-full min-w-0 items-center gap-6 text-primary-white">
+          <div data-intro="logo" className="shrink-0">
+            <LogoMark />
           </div>
-          <div data-intro="meta" className="mt-3 flex items-center gap-4">
-            <div className="relative h-px min-w-0 flex-1 overflow-hidden bg-secondary-white/20">
-              <div
-                data-intro="bar"
-                className="absolute inset-y-0 left-0 w-full bg-secondary-white will-change-transform"
-              />
-            </div>
+
+          <div className="relative h-px min-w-0 flex-1 overflow-hidden">
             <div
-              data-intro="percent"
-              className="flex w-[2.75rem] shrink-0 items-baseline justify-end font-secondary text-[0.8125rem] leading-none text-secondary-white"
-            >
-              <span
-                data-intro="percent-value"
-                className="inline-block w-[1.75rem] text-right tabular-nums"
-              >
-                0
-              </span>
-              <span>%</span>
-            </div>
+              data-intro="bar"
+              className="absolute inset-y-0 left-0 w-full origin-left bg-primary-white will-change-transform"
+            />
+          </div>
+
+          <div
+            data-intro="percent"
+            className="w-[3.5ch] shrink-0 text-right font-secondary text-[28px] leading-none tabular-nums tracking-tight text-primary-white md:text-[32px]"
+          >
+            <span data-intro="percent-value">0</span>
           </div>
         </div>
       </div>

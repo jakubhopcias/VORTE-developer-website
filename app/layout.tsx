@@ -4,6 +4,7 @@ import Header from "@/lib/components/Header";
 import IntroLoader from "@/lib/components/IntroLoader";
 import SmoothScroll from "@/lib/components/SmoothScroll";
 import Footer from "@/lib/components/Home/Footer";
+import PinBeforeFooter from "@/lib/components/PinBeforeFooter";
 import "./globals.css";
 
 const melodrama = localFont({
@@ -34,13 +35,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${melodrama.variable} ${generalSans.variable} h-full antialiased`}
     >
       <body className="grid grid-cols-12 min-h-full">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: 'history.scrollRestoration="manual"',
+          }}
+        />
         <SmoothScroll />
         <IntroLoader />
         <Header />
-        <div className="col-start-1 col-span-full row-start-1 min-h-full isolate">
-          {children}
+        <div className="col-start-1 col-span-full row-start-1 min-h-full">
+          <PinBeforeFooter>{children}</PinBeforeFooter>
+          <Footer />
         </div>
-        <Footer />
       </body>
     </html>
   );

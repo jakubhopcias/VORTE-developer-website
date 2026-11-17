@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ApartmentTiles from "@/lib/components/Home/Silentium/ApartmentTiles";
 import LinkUnderline from "@/lib/components/LinkUnderline";
+import { hasIntroCompleted } from "@/lib/intro";
 import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 import {
   SILENTIUM_HREF,
@@ -37,7 +38,6 @@ export default function Silentium() {
 
     enteringRef.current = false;
     removeSilentiumTransitionLayer();
-    unlockScroll();
 
     const media = root.querySelector<HTMLElement>("[data-silentium='media']");
     const intro = root.querySelector<HTMLElement>("[data-silentium='intro']");
@@ -51,16 +51,20 @@ export default function Silentium() {
       gsap.set([media, cta, intro, list].filter(Boolean), {
         clearProps: "opacity,visibility,transform,filter",
       });
-      if (header) gsap.set(header, { clearProps: "opacity,visibility" });
+      if (hasIntroCompleted() && header) {
+        gsap.set(header, { clearProps: "opacity,visibility" });
+      }
     };
 
+    // Intro owns the lock. Don't reopen Lenis while the curtain is still up.
+    if (hasIntroCompleted()) unlockScroll();
     resetSectionVisibility();
 
     const onPageShow = (event: PageTransitionEvent) => {
       if (!event.persisted) return;
       enteringRef.current = false;
       removeSilentiumTransitionLayer();
-      unlockScroll();
+      if (hasIntroCompleted()) unlockScroll();
       resetSectionVisibility();
     };
     window.addEventListener("pageshow", onPageShow);

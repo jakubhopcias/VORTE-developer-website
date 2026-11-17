@@ -5,7 +5,11 @@ import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { onIntroComplete } from "@/lib/intro";
-import { SCROLL_LOCK_EVENT, SCROLL_UNLOCK_EVENT } from "@/lib/scroll-lock";
+import {
+  isScrollLocked,
+  SCROLL_LOCK_EVENT,
+  SCROLL_UNLOCK_EVENT,
+} from "@/lib/scroll-lock";
 import { syncViewportVars } from "@/lib/viewport";
 import "lenis/dist/lenis.css";
 
@@ -59,7 +63,12 @@ export default function SmoothScroll() {
       refresh();
     };
 
+    // Intro may lock before this effect mounts — honor the flag.
+    if (isScrollLocked()) lock();
+
     const afterIntro = () => {
+      window.scrollTo(0, 0);
+      lenis.scrollTo(0, { immediate: true });
       syncViewportVars();
       lenis.resize();
       ScrollTrigger.refresh();
