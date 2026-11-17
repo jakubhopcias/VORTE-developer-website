@@ -158,7 +158,7 @@ export default function Figures() {
       </div>
       <ul
         data-figures="list"
-        className="mx-auto order-2 grid w-full max-w-md grid-cols-1 gap-8 md:mx-0 md:max-w-none md:col-span-7 md:h-full md:content-evenly md:gap-0 md:py-section lg:col-span-5 lg:col-start-7"
+        className="mx-auto order-2 grid w-full max-w-md grid-cols-1 gap-10 md:mx-0 md:max-w-none md:col-span-7 md:h-full md:content-evenly md:gap-0 md:py-section lg:col-span-5 lg:col-start-7"
       >
         {figures.map((figure) => (
           <li
@@ -186,7 +186,7 @@ export default function Figures() {
             </p>
             <p
               data-figures="copy"
-              className="small col-span-3 col-start-4 text-secondary-white opacity-0 md:col-auto md:col-start-auto md:max-w-xs"
+              className="small col-span-4 col-start-3 text-secondary-white opacity-0 md:col-auto md:col-start-auto md:max-w-xs"
             >
               {figure.copy}
             </p>

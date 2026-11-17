@@ -7,10 +7,10 @@
   --color-black: #181914;
 
   /* Section inset — px-section / py-section-y / p-section / etc.
-   * Phone: 24px x, 80px y. Tablet+: 48px x, 64px y. */
+   * Phone: 24px x, 64px y. Tablet+: 48px x, 64px y. */
   --spacing-section: 1.5rem; /* 24px */
-  --spacing-section-y: 5rem; /* 80px */
-  --spacing-section-top: 5rem; /* 80px */
+  --spacing-section-y: 4rem; /* 64px */
+  --spacing-section-top: 4rem; /* 64px */
 }
 
 @media (width >= 48rem) {

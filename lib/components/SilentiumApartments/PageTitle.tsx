@@ -42,7 +42,7 @@ export default function PageTitle() {
     <div className="px-section pt-section">
       <div
         data-enter="label"
-        className="flex items-center gap-6 motion-safe:opacity-0"
+        className="flex w-full items-center justify-between motion-safe:opacity-0"
       >
         <Link href="/" aria-label="Vørte home" className="text-primary-white">
           <LogoMark />

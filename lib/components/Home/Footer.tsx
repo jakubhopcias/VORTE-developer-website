@@ -375,17 +375,17 @@ export default function Footer() {
       id="footer"
       className="relative z-[60] flex h-svh flex-col justify-between gap-16 bg-black px-section py-section-y md:gap-24 md:p-section lg:gap-32"
     >
-      <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:items-start">
+      <div className="flex flex-col gap-12 md:gap-16 xl:grid xl:grid-cols-12 xl:items-start xl:gap-8">
         <h2
           ref={headingRef}
-          className="headline lg:col-span-5 lg:self-start opacity-0"
+          className="headline opacity-0 xl:col-span-5 xl:self-start"
         >
           Your requirements are unique. Our approach is absolute.
         </h2>
         <form
           noValidate
           onSubmit={onSubmit}
-          className="grid grid-cols-6 grid-rows-[auto_auto_auto] items-start gap-x-4 gap-y-8 lg:col-span-5 lg:col-start-8 xl:col-span-4 xl:col-start-8"
+          className="grid grid-cols-6 grid-rows-[auto_auto_auto] items-start gap-x-4 gap-y-8 xl:col-span-5 xl:col-start-8"
         >
           {/* Row 1 — stepline sizes the row; fields sit beside it. */}
           <ol
@@ -599,10 +599,13 @@ export default function Footer() {
             <p className="small text-secondary-white">Direct contact</p>
             <p className="small text-secondary-white">
               Adam kowalski
-              <span className="mx-2 text-primary-white" aria-hidden>
+              <span className="mx-2 hidden text-primary-white md:inline" aria-hidden>
                 *
               </span>
-              <a href="tel:+48452423123" className="text-secondary-white">
+              <a
+                href="tel:+48452423123"
+                className="block text-secondary-white md:inline"
+              >
                 +48 452 423 123
               </a>
             </p>

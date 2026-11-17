@@ -182,7 +182,7 @@ function GalleryMeta({
         </>
       ) : (
         <>
-          <div className="relative col-span-1 min-h-[1.35em] lg:col-span-1">
+          <div className="relative col-span-2 min-h-[1.35em] lg:col-span-1">
             {images.map((image, index) => (
               <p
                 key={`room-${image.src}`}
@@ -585,7 +585,10 @@ export default function ApartmentSection({
       return;
     }
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      window.matchMedia("(max-width: 1023px)").matches
+    ) {
       entranceDoneRef.current = true;
       setMediaReady(true);
       return;

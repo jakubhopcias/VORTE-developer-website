@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { getSilentiumTransitionLayer } from "@/lib/silentium-transition";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -91,12 +92,15 @@ function Callouts({
   activeParam,
   onActiveParam,
   copyAlways = false,
+  concealed = false,
 }: {
   tone: "primary" | "pure";
   activeParam: number | null;
   onActiveParam?: (index: number | null) => void;
   /** Wireframe-on-top: white copy stays visible; photo copy still hover-gated. */
   copyAlways?: boolean;
+  /** Hidden on first paint. GSAP inline styles override this when the reveal runs. */
+  concealed?: boolean;
 }) {
   const interactive = Boolean(onActiveParam);
   const ink = tone === "primary" ? "text-primary-white" : "text-[#fff]";
@@ -133,12 +137,13 @@ function Callouts({
 
   const copyClass = (index: number) =>
     copyAlways || activeParam === index ? "opacity-100" : "opacity-0";
+  const held = concealed ? "motion-safe:invisible motion-safe:opacity-0" : "";
 
   return (
     <div className={`absolute inset-0 ${interactive ? "" : "pointer-events-none"}`}>
       <div
         data-callout-item={interactive ? "" : undefined}
-        className={`absolute top-[9%] left-[33%] ${interactive ? "cursor-default" : ""}`}
+        className={`absolute top-[9%] left-[33%] ${held} ${interactive ? "cursor-default" : ""}`}
         {...bindParam(0)}
       >
         <div className="grid grid-cols-[auto_15ch_16rem] items-center gap-x-8">
@@ -150,7 +155,7 @@ function Callouts({
 
       <div
         data-callout-item={interactive ? "" : undefined}
-        className={`absolute bottom-[8%] left-[25%] ${interactive ? "cursor-default" : ""}`}
+        className={`absolute bottom-[8%] left-[25%] ${held} ${interactive ? "cursor-default" : ""}`}
         {...bindParam(1)}
       >
         <div className="grid grid-cols-[12ch_auto_16rem] items-end gap-x-8">
@@ -162,7 +167,7 @@ function Callouts({
 
       <div
         data-callout-item={interactive ? "" : undefined}
-        className={`absolute top-[49%] right-[26%] flex flex-col items-start gap-3 ${interactive ? "cursor-default" : ""}`}
+        className={`absolute top-[49%] right-[26%] flex flex-col items-start gap-3 ${held} ${interactive ? "cursor-default" : ""}`}
         {...bindParam(2)}
       >
         {hint(2)}
@@ -176,6 +181,7 @@ function Callouts({
 }
 
 function MobileTiles() {
+  const rootRef = useRef<HTMLDivElement>(null);
   const [wired, setWired] = useState<boolean[]>(() =>
     features.map(() => false),
   );
@@ -184,8 +190,47 @@ function MobileTiles() {
     setWired((prev) => prev.map((v, i) => (i === index ? !v : v)));
   };
 
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const tiles = gsap.utils.toArray<HTMLElement>(
+      root.querySelectorAll("[data-tile]"),
+    );
+    if (!tiles.length) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.set(tiles, { autoAlpha: 1 });
+      return;
+    }
+
+    gsap.set(tiles, { autoAlpha: 0 });
+
+    const triggers = tiles.map((tile) =>
+      ScrollTrigger.create({
+        trigger: tile,
+        start: "top 88%",
+        once: true,
+        onEnter: () => {
+          gsap.to(tile, {
+            autoAlpha: 1,
+            duration: 0.35,
+            ease: "power1.out",
+          });
+        },
+      }),
+    );
+
+    return () => {
+      triggers.forEach((trigger) => trigger.kill());
+    };
+  }, []);
+
   return (
-    <div className="flex flex-col items-center gap-10 md:grid md:grid-cols-2 md:items-start md:justify-items-center lg:hidden">
+    <div
+      ref={rootRef}
+      className="flex flex-col items-center gap-10 md:grid md:grid-cols-2 md:items-start md:justify-items-center lg:hidden"
+    >
       {features.map((feature, index) => {
         const showWire = wired[index];
         const isLast = index === features.length - 1;
@@ -193,7 +238,8 @@ function MobileTiles() {
         return (
           <article
             key={feature.title}
-            className={`flex w-[min(100%,28rem)] flex-col justify-between gap-5 ${
+            data-tile
+            className={`flex w-[min(100%,28rem)] flex-col justify-between gap-5 motion-safe:opacity-0 ${
               isLast ? "md:col-span-2" : ""
             }`}
           >
@@ -266,10 +312,12 @@ function FrameHint({
   tone,
   hovered,
   wireOnTop,
+  concealed = false,
 }: {
   tone: "primary" | "pure";
   hovered: boolean;
   wireOnTop: boolean;
+  concealed?: boolean;
 }) {
   const color = tone === "primary" ? "text-primary-white" : "text-[#fff]";
   const label = wireOnTop
@@ -291,7 +339,10 @@ function FrameHint({
     <p
       aria-hidden={tone === "pure"}
       aria-live={tone === "primary" ? "polite" : undefined}
-      className={`small pointer-events-none absolute right-6 bottom-6 text-right transition-colors duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${color}`}
+      data-frame-hint={tone === "primary" ? "" : undefined}
+      className={`small pointer-events-none absolute right-6 bottom-6 text-right transition-colors duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${color} ${
+        concealed ? "motion-safe:invisible motion-safe:opacity-0" : ""
+      }`}
     >
       <span
         className={`inline-block transition-opacity duration-200 ease-out ${
@@ -320,6 +371,8 @@ function DesktopReveal() {
   const [frameHovered, setFrameHovered] = useState(false);
   const [wireOnTop, setWireOnTop] = useState(false);
   const wireOnTopRef = useRef(false);
+  const readyRef = useRef(false);
+  const [ready, setReady] = useState(false);
   wireOnTopRef.current = wireOnTop;
 
   const stagePointFromPointer = useCallback(() => {
@@ -413,9 +466,7 @@ function DesktopReveal() {
     if (!frame || !stage) return;
 
     const ro = new ResizeObserver(([entry]) => {
-      const next = entry.contentRect.width / DESIGN_W;
-      scaleRef.current = next;
-      stage.style.transform = `scale(${next})`;
+      scaleRef.current = entry.contentRect.width / DESIGN_W;
     });
     ro.observe(frame);
 
@@ -426,32 +477,68 @@ function DesktopReveal() {
     applyInset(insetPin(DESIGN_W / 2, DESIGN_H / 2));
   }, [applyInset]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;
 
-    const items = frame.querySelectorAll<HTMLElement>("[data-callout-item]");
-    if (!items.length) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      readyRef.current = true;
+      setReady(true);
+      return;
+    }
 
-    gsap.set(items, { autoAlpha: 0, y: 14 });
+    const mm = gsap.matchMedia();
 
-    const tween = gsap.to(items, {
-      autoAlpha: 1,
-      y: 0,
-      duration: 0.65,
-      stagger: 0.14,
-      ease: "power2.out",
-      scrollTrigger: {
+    mm.add("(min-width: 1024px)", () => {
+      const items = frame.querySelectorAll<HTMLElement>("[data-callout-item]");
+      const hint = frame.querySelector<HTMLElement>("[data-frame-hint]");
+      if (!items.length) return;
+
+      gsap.set(items, { autoAlpha: 0, y: 12 });
+      if (hint) gsap.set(hint, { autoAlpha: 0, y: 8 });
+
+      let opened = false;
+      const open = () => {
+        if (opened) return;
+        opened = true;
+        const tl = gsap.timeline({
+          onStart: () => {
+            readyRef.current = true;
+            setReady(true);
+          },
+        });
+        tl.to(
+          items,
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.55,
+            stagger: 0.1,
+            ease: "power2.out",
+          },
+          0,
+        );
+        if (hint) {
+          tl.to(hint, { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out" }, 0.24);
+        }
+      };
+
+      // Labels wait until the photo has actually been scrolled to. A load-time
+      // refresh must not play them next to the headline.
+      const origin = window.scrollY;
+      const st = ScrollTrigger.create({
         trigger: frame,
-        start: "top 70%",
-        once: true,
-      },
+        start: "top 26%",
+        onUpdate: (self) => {
+          if (!self.isActive || Math.abs(window.scrollY - origin) < 24) return;
+          open();
+          st.kill();
+        },
+      });
     });
 
-    return () => {
-      tween.scrollTrigger?.kill();
-      tween.kill();
-    };
+    return () => mm.revert();
   }, []);
 
   useEffect(
@@ -470,6 +557,7 @@ function DesktopReveal() {
 
   const onEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!readyRef.current) return;
       pointerRef.current = { x: e.clientX, y: e.clientY, over: true };
       // Resolve stage point while over=true so lastStageRef is the entry cursor.
       const { x, y } = stagePointFromPointer();
@@ -505,6 +593,7 @@ function DesktopReveal() {
   );
 
   const onLeave = useCallback(() => {
+    if (!readyRef.current) return;
     // Keep lastStageRef — close the window where the cursor exited, not at center.
     stagePointFromPointer();
     pointerRef.current.over = false;
@@ -515,7 +604,7 @@ function DesktopReveal() {
   }, [setMaskOpen, stagePointFromPointer, stopLoop]);
 
   const onClick = useCallback(() => {
-    if (switchingRef.current) return;
+    if (!readyRef.current || switchingRef.current) return;
 
     setActiveParam(null);
     switchTweenRef.current?.kill();
@@ -577,22 +666,27 @@ function DesktopReveal() {
     <div
       ref={frameRef}
       role="button"
-      tabIndex={0}
       aria-pressed={wireOnTop}
+      aria-disabled={!ready}
       aria-label={
         wireOnTop ? "Click to see photo" : "Click to see wireframe"
       }
+      tabIndex={ready ? 0 : -1}
       onMouseEnter={onEnter}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       onClick={onClick}
       onKeyDown={(e) => {
+        if (!readyRef.current) return;
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onClick();
         }
       }}
-      className="relative hidden w-full cursor-pointer overflow-hidden rounded-xl lg:block"
+      data-enter="photo"
+      className={`relative hidden w-full overflow-hidden rounded-xl motion-safe:opacity-0 [container-type:inline-size] lg:block ${
+        ready ? "cursor-pointer" : "pointer-events-none"
+      }`}
       style={{ aspectRatio: `${DESIGN_W} / ${DESIGN_H}` }}
     >
       <div
@@ -601,7 +695,7 @@ function DesktopReveal() {
         style={{
           width: DESIGN_W,
           height: DESIGN_H,
-          transform: "scale(1)",
+          transform: `scale(calc(100cqw / ${DESIGN_W}px))`,
         }}
       >
         <Image
@@ -610,11 +704,11 @@ function DesktopReveal() {
           width={DESIGN_W}
           height={DESIGN_H}
           sizes="100vw"
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          className="absolute inset-0 h-full w-full rounded-xl object-cover object-center"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-black/8"
+          className="pointer-events-none absolute inset-0 rounded-xl bg-black/8"
         />
 
         <div className={wireOnTop ? "pointer-events-none" : ""}>
@@ -622,11 +716,13 @@ function DesktopReveal() {
             tone="primary"
             activeParam={activeParam}
             onActiveParam={wireOnTop ? undefined : setActiveParam}
+            concealed
           />
           <FrameHint
             tone="primary"
             hovered={frameHovered}
             wireOnTop={wireOnTop}
+            concealed
           />
         </div>
 
@@ -645,12 +741,12 @@ function DesktopReveal() {
             width={DESIGN_W}
             height={DESIGN_H}
             sizes="100vw"
-            className="absolute inset-0 h-full w-full object-cover object-center"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-black/8"
-          />
+          className="absolute inset-0 h-full w-full rounded-xl object-cover object-center"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-xl bg-black/8"
+        />
           <Callouts
             tone="pure"
             activeParam={activeParam}
@@ -669,17 +765,81 @@ function DesktopReveal() {
 }
 
 export default function Intelligence() {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const copyRef = useRef<HTMLParagraphElement>(null);
+
+  useLayoutEffect(() => {
+    const label = document.querySelector<HTMLElement>("[data-enter='label']");
+    const title = titleRef.current;
+    const copy = copyRef.current;
+    const photos = gsap.utils.toArray<HTMLElement>("[data-enter='photo']");
+    if (!label || !title || !copy || !photos.length) return;
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) return;
+
+    const tl = gsap.timeline({
+      defaults: { ease: "power2.out" },
+      delay: getSilentiumTransitionLayer() ? 0.2 : 0,
+    });
+
+    tl.fromTo(
+      label,
+      { autoAlpha: 0, y: 20 },
+      { autoAlpha: 1, y: 0, duration: 0.4, immediateRender: true },
+      0,
+    )
+      .fromTo(
+        title,
+        { autoAlpha: 0, filter: "blur(12px)" },
+        { autoAlpha: 1, filter: "blur(0px)", duration: 0.55, immediateRender: true },
+        "-=0.28",
+      )
+      .fromTo(
+        copy,
+        { autoAlpha: 0, y: 20 },
+        { autoAlpha: 1, y: 0, duration: 0.4, immediateRender: true },
+        "-=0.32",
+      )
+      .fromTo(
+        photos,
+        { autoAlpha: 0, y: 20 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.55,
+          immediateRender: true,
+          onComplete: () => ScrollTrigger.refresh(),
+        },
+        "-=0.28",
+      );
+
+    return () => {
+      tl.kill();
+    };
+  }, []);
+
   return (
     <section className="flex flex-col gap-10 px-section pt-6 pb-section-y lg:gap-8 lg:pt-8 lg:pb-section">
       <div className="flex flex-col gap-8 md:grid md:grid-cols-12 md:items-end md:gap-8">
-        <h2 className="headline text-primary-white md:col-span-6">
-          Technology you can only feel
-        </h2>
-        <p className="small max-w-md text-secondary-white md:col-span-5 md:col-start-8 lg:col-span-4 lg:col-start-8">
-          Climate, security, and lighting integrated invisibly beneath raw
-          architectural surfaces. No visible panels, no blinking LEDs—just
-          responsive living spaces that anticipate your presence.
-        </p>
+        <div className="py-[0.08em] md:col-span-6">
+          <h2
+            ref={titleRef}
+            className="headline text-primary-white motion-safe:opacity-0"
+          >
+            Technology you can only feel
+          </h2>
+        </div>
+        <div className="md:col-span-5 md:col-start-8 lg:col-span-4 lg:col-start-8">
+          <p
+            ref={copyRef}
+            className="small max-w-md text-secondary-white motion-safe:opacity-0"
+          >
+            Climate, security, and lighting integrated invisibly beneath raw
+            architectural surfaces. No visible panels, no blinking LEDs—just
+            responsive living spaces that anticipate your presence.
+          </p>
+        </div>
       </div>
 
       <MobileTiles />
