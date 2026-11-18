@@ -23,15 +23,15 @@ export default function ApartmentTiles() {
           key={apartment.name}
           className="group w-full border-b border-tertiary-white/20"
         >
-          <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-x-6 py-5 md:gap-x-8 md:py-6 lg:items-start">
+          <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-x-6 py-5 md:gap-x-8 md:py-6 lg:grid-cols-[auto_minmax(0,13rem)_auto] lg:items-start">
             <span className="small shrink-0 text-secondary-white">
               {String(index + 1).padStart(2, "0")}
             </span>
-            <span className="small truncate text-secondary-white transition-colors duration-500 group-hover:text-primary-white lg:max-w-[13rem]">
+            <span className="small truncate text-secondary-white transition-colors duration-500 group-hover:text-primary-white">
               {apartment.name}
             </span>
-            {/* Mobile: always-on thumb at the row end. Desktop: hover expand. */}
-            <span className="h-[3.75rem] w-24 justify-self-end overflow-hidden opacity-100 transition-[width,height,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:h-0 lg:w-0 lg:opacity-0 lg:group-hover:h-[5.625rem] lg:group-hover:w-36 lg:group-hover:opacity-100">
+            {/* Mobile: thumb at row end. Desktop: hover expand beside the name. */}
+            <span className="h-[3.75rem] w-24 justify-self-end overflow-hidden opacity-100 transition-[width,height,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:h-0 lg:w-0 lg:justify-self-auto lg:opacity-0 lg:group-hover:h-[5.625rem] lg:group-hover:w-36 lg:group-hover:opacity-100">
               <span className="relative block aspect-video w-24 origin-bottom scale-100 overflow-hidden rounded-[4px] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:origin-top lg:w-36 lg:scale-95 lg:group-hover:scale-100">
                 <Image
                   src={apartment.image}

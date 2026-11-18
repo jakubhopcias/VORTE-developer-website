@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Header from "@/lib/components/Header";
 import IntroLoader from "@/lib/components/IntroLoader";
+import SiteCursor from "@/lib/components/SiteCursor";
 import SmoothScroll from "@/lib/components/SmoothScroll";
 import Footer from "@/lib/components/Home/Footer";
 import PinBeforeFooter from "@/lib/components/PinBeforeFooter";
@@ -40,13 +41,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             __html: 'history.scrollRestoration="manual"',
           }}
         />
-        <SmoothScroll />
-        <IntroLoader />
-        <Header />
-        <div className="col-start-1 col-span-full row-start-1 min-h-full">
-          <PinBeforeFooter>{children}</PinBeforeFooter>
-          <Footer />
-        </div>
+        <SiteCursor>
+          <SmoothScroll />
+          <IntroLoader />
+          <Header />
+          <div className="col-start-1 col-span-full row-start-1 min-h-full">
+            <PinBeforeFooter>{children}</PinBeforeFooter>
+            <Footer />
+          </div>
+        </SiteCursor>
       </body>
     </html>
   );

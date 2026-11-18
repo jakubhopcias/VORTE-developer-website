@@ -23,6 +23,9 @@ export default function Hero() {
     removeSilentiumTransitionLayer();
     syncViewportVars();
 
+    const main = rootRef.current?.closest("main") ?? document.querySelector("main");
+    if (main) gsap.set(main, { clearProps: "opacity,visibility" });
+
     // Intro owns the lock and the mark. Don't steal them mid-loader.
     if (!hasIntroCompleted()) return;
 

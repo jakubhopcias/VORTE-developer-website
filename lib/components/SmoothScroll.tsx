@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -16,6 +17,9 @@ import "lenis/dist/lenis.css";
 gsap.registerPlugin(ScrollTrigger);
 
 export default function SmoothScroll() {
+  const pathname = usePathname();
+  const lenisRef = useRef<Lenis | null>(null);
+
   useEffect(() => {
     const lenis = new Lenis({
       autoRaf: false,
@@ -34,6 +38,8 @@ export default function SmoothScroll() {
       stopInertiaOnNavigate: true,
       respectReducedMotion: true,
     });
+
+    lenisRef.current = lenis;
 
     const onScroll = () => {
       ScrollTrigger.update();
@@ -88,8 +94,22 @@ export default function SmoothScroll() {
       gsap.ticker.remove(tick);
       lenis.off("scroll", onScroll);
       lenis.destroy();
+      lenisRef.current = null;
     };
   }, []);
+
+  // Soft nav keeps window scroll — home then opens mid-footer (logo only).
+  useEffect(() => {
+    const lenis = lenisRef.current;
+    window.scrollTo(0, 0);
+    lenis?.scrollTo(0, { immediate: true });
+    const id = requestAnimationFrame(() => {
+      syncViewportVars();
+      lenis?.resize();
+      ScrollTrigger.refresh();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [pathname]);
 
   return null;
 }

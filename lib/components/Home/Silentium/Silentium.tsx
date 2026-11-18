@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ApartmentTiles from "@/lib/components/Home/Silentium/ApartmentTiles";
 import LinkUnderline from "@/lib/components/LinkUnderline";
+import { CursorHotspot } from "@/lib/components/SiteCursor";
 import { hasIntroCompleted } from "@/lib/intro";
 import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 import {
@@ -247,6 +248,12 @@ export default function Silentium() {
         resetSectionVisibility();
         markSilentiumEnter();
         router.push(SILENTIUM_HREF);
+        // Don't leave a faded main in the router cache / bfcache snapshot.
+        if (homeMain) {
+          requestAnimationFrame(() => {
+            gsap.set(homeMain, { clearProps: "opacity,visibility" });
+          });
+        }
       };
 
       cta.addEventListener("click", enterSilentium);
@@ -297,36 +304,41 @@ export default function Silentium() {
         </div>
       </div>
 
-      <a
-        href={SILENTIUM_HREF}
-        data-silentium-cta
-        aria-label="Click to explore Silentium"
-        className="group/cta group relative z-50 order-2 flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-xl p-section lg:aspect-auto lg:h-full lg:min-h-0 lg:w-1/2"
+      <CursorHotspot
+        label="Enter Silentium"
+        className="group/cta relative z-50 order-2 aspect-[4/5] lg:aspect-auto lg:h-full lg:min-h-0 lg:w-1/2"
       >
-        <div
-          data-silentium="media"
-          className="absolute inset-0 will-change-transform"
+        <a
+          href={SILENTIUM_HREF}
+          data-silentium-cta
+          aria-label="Enter Silentium"
+          className="group relative flex h-full min-h-0 w-full flex-col justify-end overflow-hidden rounded-xl p-section"
         >
-          <div className="absolute inset-0 scale-[1.18] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/cta:scale-[1.3]">
-            <Image
-              src={SILENTIUM_IMAGE}
-              alt="Silentium building"
-              fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover lg:border-l lg:border-primary-white"
-            />
-          </div>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 via-40% to-transparent to-65% lg:bg-gradient-to-tr lg:from-black/55 lg:via-black/20 lg:via-45% lg:to-transparent lg:to-75%" />
-        <div className="relative z-10 flex justify-end">
-          <LinkUnderline
-            as="span"
-            className="small shrink-0 text-primary-white"
+          <div
+            data-silentium="media"
+            className="absolute inset-0 will-change-transform"
           >
-            Click to explore Silentium
-          </LinkUnderline>
-        </div>
-      </a>
+            <div className="absolute inset-0 scale-[1.18] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/cta:scale-[1.3]">
+              <Image
+                src={SILENTIUM_IMAGE}
+                alt="Silentium building"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover lg:border-l lg:border-primary-white"
+              />
+            </div>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 via-40% to-transparent to-65% lg:bg-gradient-to-tr lg:from-black/55 lg:via-black/20 lg:via-45% lg:to-transparent lg:to-75%" />
+          <div className="relative z-10 flex justify-end lg:hidden">
+            <LinkUnderline
+              as="span"
+              className="small shrink-0 text-primary-white"
+            >
+              Enter Silentium
+            </LinkUnderline>
+          </div>
+        </a>
+      </CursorHotspot>
     </div>
   );
 }
