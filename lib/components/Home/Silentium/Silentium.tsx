@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ApartmentTiles from "@/lib/components/Home/Silentium/ApartmentTiles";
-import LinkUnderline from "@/lib/components/LinkUnderline";
-import { CursorHotspot } from "@/lib/components/SiteCursor";
 import { hasIntroCompleted } from "@/lib/intro";
 import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 import {
@@ -18,9 +16,6 @@ import {
   markSilentiumEnter,
   removeSilentiumTransitionLayer,
 } from "@/lib/silentium-transition";
-
-/** Extra zoom past the card’s rest scale while the frame goes fullscreen. */
-const ENTER_ZOOM = 1.55;
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -57,7 +52,6 @@ export default function Silentium() {
       }
     };
 
-    // Intro owns the lock. Don't reopen Lenis while the curtain is still up.
     if (hasIntroCompleted()) unlockScroll();
     resetSectionVisibility();
 
@@ -73,9 +67,9 @@ export default function Silentium() {
     const ctx = gsap.context(() => {
       gsap.fromTo(
         media,
-        { yPercent: -8 },
+        { yPercent: -6 },
         {
-          yPercent: 8,
+          yPercent: 6,
           ease: "none",
           scrollTrigger: {
             trigger: root,
@@ -107,8 +101,8 @@ export default function Silentium() {
         exitTargets,
         { y: 0, autoAlpha: 1 },
         {
-          y: 56,
-          autoAlpha: 0.2,
+          y: 40,
+          autoAlpha: 0.35,
           ease: "none",
           scrollTrigger: {
             trigger: root,
@@ -119,32 +113,16 @@ export default function Silentium() {
         },
       );
 
+      /** Wipe enters from the right, covers home, then destination lifts it left. */
       const enterSilentium = async (event: Event) => {
         event.preventDefault();
         if (enteringRef.current) return;
         enteringRef.current = true;
 
         lockScroll();
-
-        const mediaInner = media.querySelector<HTMLElement>(":scope > div");
-        const homeMain = root.closest("main");
-        const rect = cta.getBoundingClientRect();
-        const radius = getComputedStyle(cta).borderRadius || "0px";
-        const black = getAppBlack();
-        let startScale = 1.18;
-        if (mediaInner) {
-          try {
-            startScale = new DOMMatrix(
-              getComputedStyle(mediaInner).transform,
-            ).a;
-          } catch {
-            startScale = 1.18;
-          }
-        }
-        if (!Number.isFinite(startScale) || startScale <= 0) startScale = 1.18;
-
         removeSilentiumTransitionLayer();
 
+        const black = getAppBlack();
         const layer = document.createElement("div");
         layer.setAttribute(SILENTIUM_LAYER_ATTR, "layer");
         Object.assign(layer.style, {
@@ -153,86 +131,16 @@ export default function Silentium() {
           zIndex: "120",
           pointerEvents: "none",
           background: black,
+          willChange: "transform",
         });
-
-        const frame = document.createElement("div");
-        Object.assign(frame.style, {
-          position: "absolute",
-          top: `${rect.top}px`,
-          left: `${rect.left}px`,
-          width: `${rect.width}px`,
-          height: `${rect.height}px`,
-          overflow: "hidden",
-          borderRadius: radius,
-          background: black,
-          willChange: "top, left, width, height, border-radius, opacity",
-        });
-
-        const imgWrap = document.createElement("div");
-        Object.assign(imgWrap.style, {
-          position: "absolute",
-          inset: "0",
-          transform: `scale(${startScale})`,
-          transformOrigin: "center center",
-          willChange: "transform, opacity",
-        });
-
-        const img = document.createElement("img");
-        img.src = SILENTIUM_IMAGE;
-        img.alt = "";
-        img.decoding = "sync";
-        Object.assign(img.style, {
-          position: "absolute",
-          inset: "0",
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          objectPosition: "center",
-        });
-
-        imgWrap.appendChild(img);
-        frame.appendChild(imgWrap);
-        layer.appendChild(frame);
         document.body.appendChild(layer);
+        gsap.set(layer, { xPercent: 100 });
 
         const tl = gsap.timeline({
           defaults: { ease: "power3.inOut" },
         });
 
-        // Expand card → fullscreen while zooming into the photo…
-        tl.to(
-          frame,
-          {
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            borderRadius: 0,
-            duration: 0.95,
-          },
-          0,
-        );
-        tl.to(
-          imgWrap,
-          {
-            scale: ENTER_ZOOM,
-            duration: 0.95,
-          },
-          0,
-        );
-        // …and fade the image out so Silentium can appear underneath.
-        tl.to(
-          frame,
-          { opacity: 0, duration: 0.7, ease: "power2.in" },
-          0.25,
-        );
-        if (homeMain) {
-          tl.to(
-            homeMain,
-            { autoAlpha: 0, duration: 0.45, ease: "power2.in" },
-            0.3,
-          );
-        }
+        tl.to(layer, { xPercent: 0, duration: 0.85 }, 0);
 
         try {
           await tl.then();
@@ -241,19 +149,11 @@ export default function Silentium() {
           unlockScroll();
           removeSilentiumTransitionLayer();
           resetSectionVisibility();
-          if (homeMain) gsap.set(homeMain, { clearProps: "opacity,visibility" });
           return;
         }
 
-        resetSectionVisibility();
         markSilentiumEnter();
         router.push(SILENTIUM_HREF);
-        // Don't leave a faded main in the router cache / bfcache snapshot.
-        if (homeMain) {
-          requestAnimationFrame(() => {
-            gsap.set(homeMain, { clearProps: "opacity,visibility" });
-          });
-        }
       };
 
       cta.addEventListener("click", enterSilentium);
@@ -277,10 +177,10 @@ export default function Silentium() {
     <div
       ref={rootRef}
       id="silentium"
-      className="relative flex flex-col gap-8 px-section py-section-y lg:h-svh lg:min-h-0 lg:flex-row lg:items-stretch lg:gap-8 lg:overflow-hidden lg:p-section"
+      className="relative flex flex-col gap-10 px-section py-section-y lg:h-svh lg:min-h-0 lg:flex-row lg:items-stretch lg:gap-10 lg:overflow-hidden lg:p-section"
     >
-      <div className="contents lg:flex lg:h-full lg:w-1/2 lg:min-h-0 lg:flex-col lg:justify-between lg:gap-12 lg:py-section">
-        <div data-silentium="intro" className="order-1 shrink-0 opacity-0">
+      <div className="flex flex-col justify-between gap-12 lg:w-[38%] lg:min-w-0 lg:py-section">
+        <div data-silentium="intro" className="shrink-0 opacity-0">
           <h2 className="headline">
             <span className="text-secondary-white">An enclave of </span>
             <span className="text-primary-white">total silence </span>
@@ -296,49 +196,50 @@ export default function Silentium() {
           </p>
         </div>
 
-        <div
-          data-silentium="list"
-          className="order-3 shrink-0 will-change-transform lg:order-2"
-        >
+        <div data-silentium="list" className="shrink-0 will-change-transform">
           <ApartmentTiles />
         </div>
       </div>
 
-      <CursorHotspot
-        label="Enter Silentium"
-        className="group/cta relative z-50 order-2 aspect-[4/5] lg:aspect-auto lg:h-full lg:min-h-0 lg:w-1/2"
+      {/* Withheld facade — gradient hides the rest; label names the debt. */}
+      <a
+        href={SILENTIUM_HREF}
+        data-silentium-cta
+        aria-label="Enter Silentium"
+        className="group relative z-50 flex min-h-0 w-full flex-1 flex-col justify-center overflow-hidden rounded-xl lg:h-full"
       >
-        <a
-          href={SILENTIUM_HREF}
-          data-silentium-cta
-          aria-label="Enter Silentium"
-          className="group relative flex h-full min-h-0 w-full flex-col justify-end overflow-hidden rounded-xl p-section"
+        <div
+          data-silentium="media"
+          className="absolute inset-0 will-change-transform"
         >
+          <Image
+            src={SILENTIUM_IMAGE}
+            alt="Silentium building"
+            fill
+            sizes="(max-width: 1024px) 100vw, 62vw"
+            className="object-cover object-left"
+            priority
+          />
+        </div>
+
+        {/* One veil block — slides right on hover, no crossfade flicker. */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
-            data-silentium="media"
-            className="absolute inset-0 will-change-transform"
-          >
-            <div className="absolute inset-0 scale-[1.18] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/cta:scale-[1.3]">
-              <Image
-                src={SILENTIUM_IMAGE}
-                alt="Silentium building"
-                fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover lg:border-l lg:border-primary-white"
-              />
-            </div>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 via-40% to-transparent to-65% lg:bg-gradient-to-tr lg:from-black/55 lg:via-black/20 lg:via-45% lg:to-transparent lg:to-75%" />
-          <div className="relative z-10 flex justify-end lg:hidden">
-            <LinkUnderline
-              as="span"
-              className="small shrink-0 text-primary-white"
-            >
-              Enter Silentium
-            </LinkUnderline>
-          </div>
-        </a>
-      </CursorHotspot>
+            aria-hidden
+            className="absolute inset-y-0 left-0 w-[160%] will-change-transform transition-transform duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-[14%] group-focus-visible:translate-x-[14%]"
+            style={{
+              background:
+                "linear-gradient(to right, transparent 0%, transparent 20%, rgba(24,25,20,0.5) 36%, rgba(24,25,20,0.92) 52%, #181914 64%, #181914 100%)",
+            }}
+          />
+        </div>
+
+        <div className="relative z-10 flex h-full min-h-[22rem] items-center justify-end py-section-y md:min-h-[28rem] lg:min-h-0">
+          <span className="mr-16 font-secondary text-[16px] leading-[1.35] text-secondary-white/50 will-change-transform transition-[transform,color] duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-5 group-hover:text-primary-white group-focus-visible:translate-x-5 group-focus-visible:text-primary-white md:mr-20 lg:mr-24">
+            See more →
+          </span>
+        </div>
+      </a>
     </div>
   );
 }

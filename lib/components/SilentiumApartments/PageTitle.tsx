@@ -11,13 +11,13 @@ import {
   removeSilentiumTransitionLayer,
 } from "@/lib/silentium-transition";
 
-/** Way home and the place name. The entrance stagger lives below; this lifts the transition veil. */
+/** Way home and the place name. Lifts the right-wipe veil from enter. */
 export default function PageTitle() {
   useEffect(() => {
     const fromEnter = consumeSilentiumEnter();
     const main = document.querySelector("main");
     const layer = getSilentiumTransitionLayer();
-    if (main) gsap.set(main, { clearProps: "opacity,visibility" });
+    if (main) gsap.set(main, { clearProps: "opacity,visibility,transform" });
     unlockScroll();
 
     if (!fromEnter || !layer) {
@@ -25,15 +25,17 @@ export default function PageTitle() {
       return;
     }
 
-    const fade = gsap.to(layer, {
-      autoAlpha: 0,
-      duration: 0.35,
-      ease: "power2.out",
+    // Wipe continues left — home was covered from the right; destination opens.
+    gsap.set(layer, { xPercent: 0 });
+    const slide = gsap.to(layer, {
+      xPercent: -100,
+      duration: 0.85,
+      ease: "power3.inOut",
       onComplete: () => removeSilentiumTransitionLayer(),
     });
 
     return () => {
-      fade.kill();
+      slide.kill();
       removeSilentiumTransitionLayer();
     };
   }, []);
